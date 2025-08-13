@@ -135,10 +135,10 @@ fi
 read -p "Deseja criar um ambiente virtual Python? (recomendado) [y/N]: " create_venv
 if [[ $create_venv =~ ^[Yy]$ ]]; then
     print_status "Criando ambiente virtual..."
-    python3 -m venv venv
-    source venv/bin/activate
+    python3 -m venv .venv
+    source .venv/bin/activate
     print_success "Ambiente virtual criado e ativado"
-    echo "Para ativar o ambiente virtual no futuro, execute: source venv/bin/activate"
+    echo "Para ativar o ambiente virtual no futuro, execute: source .venv/bin/activate"
 fi
 
 # Instalar dependências Python
