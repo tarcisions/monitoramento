@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Monitoramento de Robôs</title>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1><i class="fas fa-robot"></i> Sistema de Monitoramento de Robôs</h1>
+                <div class="header-controls">
+                    <div class="connection-status" id="connectionStatus">
+                        <i class="fas fa-circle"></i>
+                        <span>Conectando...</span>
+                    </div>
+                    <button class="btn btn-primary" onclick="refreshData()">
+                        <i class="fas fa-sync-alt"></i> Atualizar
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dashboard Stats -->
+        <section class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="totalRobots">0</h3>
+                    <p>Total de Robôs</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon active">
+                    <i class="fas fa-play-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="activeRobots">0</h3>
+                    <p>Robôs Ativos</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon success">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="completedExecutions">0</h3>
+                    <p>Execuções Concluídas</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon error">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="failedExecutions">0</h3>
+                    <p>Execuções com Erro</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Robots Panel -->
+            <section class="panel">
+                <div class="panel-header">
+                    <h2><i class="fas fa-list"></i> Lista de Robôs</h2>
+                    <div class="panel-controls">
+                        <button class="btn btn-secondary" onclick="addRobot()">
+                            <i class="fas fa-plus"></i> Adicionar Robô
+                        </button>
+                    </div>
+                </div>
+                <div class="panel-content">
+                    <div class="robots-grid" id="robotsGrid">
+                        <!-- Robôs serão carregados dinamicamente -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Logs Panel -->
+            <section class="panel">
+                <div class="panel-header">
+                    <h2><i class="fas fa-file-alt"></i> Logs em Tempo Real</h2>
+                    <div class="panel-controls">
+                        <select id="logLevelFilter" onchange="filterLogs()">
+                            <option value="">Todos os níveis</option>
+                            <option value="DEBUG">Debug</option>
+                            <option value="INFO">Info</option>
+                            <option value="WARNING">Warning</option>
+                            <option value="ERROR">Error</option>
+                            <option value="CRITICAL">Critical</option>
+                        </select>
+                        <select id="robotFilter" onchange="filterLogs()">
+                            <option value="">Todos os robôs</option>
+                        </select>
+                        <button class="btn btn-secondary" onclick="clearLogs()">
+                            <i class="fas fa-trash"></i> Limpar
+                        </button>
+                    </div>
+                </div>
+                <div class="panel-content">
+                    <div class="logs-container" id="logsContainer">
+                        <!-- Logs serão carregados dinamicamente -->
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Charts Section -->
+        <section class="charts-section">
+            <div class="chart-container">
+                <h3>Distribuição de Status dos Robôs</h3>
+                <canvas id="robotStatusChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3>Logs por Nível (Últimas 24h)</h3>
+                <canvas id="logsChart"></canvas>
+            </div>
+        </section>
+    </div>
+
+    <!-- Robot Control Modal -->
+    <div id="robotModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Controlar Robô</h3>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="robot-info" id="robotInfo">
+                    <!-- Informações do robô -->
+                </div>
+                <div class="control-buttons">
+                    <button class="btn btn-success" onclick="sendCommand('START')">
+                        <i class="fas fa-play"></i> Iniciar
+                    </button>
+                    <button class="btn btn-warning" onclick="sendCommand('STOP')">
+                        <i class="fas fa-stop"></i> Parar
+                    </button>
+                    <button class="btn btn-info" onclick="sendCommand('RESTART')">
+                        <i class="fas fa-redo"></i> Reiniciar
+                    </button>
+                    <button class="btn btn-secondary" onclick="sendCommand('PAUSE')">
+                        <i class="fas fa-pause"></i> Pausar
+                    </button>
+                </div>
+                <div class="command-history" id="commandHistory">
+                    <h4>Histórico de Comandos</h4>
+                    <div class="commands-list">
+                        <!-- Comandos serão carregados dinamicamente -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Robot Modal -->
+    <div id="addRobotModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Adicionar Novo Robô</h3>
+                <span class="close" onclick="closeAddRobotModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="addRobotForm">
+                    <div class="form-group">
+                        <label for="robotName">Nome do Robô:</label>
+                        <input type="text" id="robotName" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="robotDescription">Descrição:</label>
+                        <textarea id="robotDescription" name="description"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="robotIP">Endereço IP:</label>
+                        <input type="text" id="robotIP" name="ip_address" placeholder="192.168.1.100">
+                    </div>
+                    <div class="form-buttons">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Salvar
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="closeAddRobotModal()">
+                            Cancelar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>
+
