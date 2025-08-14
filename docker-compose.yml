@@ -18,8 +18,9 @@ services:
     command: redis-server --requirepass default
     environment:
       REDIS_PASSWORD: default
-    ports:
-      - "6379:6379"
+    # Remover mapeamento de porta se houver conflito com Redis local
+    # ports:
+    #   - "6379:6379"
     restart: unless-stopped
 
   django:
