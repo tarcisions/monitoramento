@@ -1,15 +1,6 @@
 version: '3.8'
 
 services:
-  redis:
-    image: redis:7.0.12
-    command: redis-server --requirepass default
-    environment:
-      REDIS_PASSWORD: default
-    ports:
-      - "6379:6379"
-    restart: unless-stopped
-
   postgres:
     image: postgres:15.3-alpine
     environment:
@@ -20,6 +11,15 @@ services:
       - pgdata:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.0.12
+    command: redis-server --requirepass default
+    environment:
+      REDIS_PASSWORD: default
+    ports:
+      - "6379:6379"
     restart: unless-stopped
 
   django:
@@ -34,7 +34,7 @@ services:
       - postgres
       - redis
     volumes:
-      - static_volume:/app/static
+      - static_volume:/app/staticfiles
       - media_volume:/app/media
     restart: unless-stopped
 
