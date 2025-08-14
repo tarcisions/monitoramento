@@ -1,19 +1,20 @@
 #!/bin/bash
 set -e
 
-# Espera pelo Postgres
-echo "Aguardando Postgres..."
-while ! nc -z $POSTGRES_HOST 5432; do
-  sleep 1
-done
-echo "Postgres pronto!"
+# Função para aguardar serviço
+wait_for_service() {
+  local host=$1
+  local port=$2
+  echo "Aguardando $host:$port..."
+  while ! nc -z "$host" "$port"; do
+    sleep 1
+  done
+  echo "$host:$port pronto!"
+}
 
-# Espera pelo Redis
-echo "Aguardando Redis..."
-while ! nc -z $REDIS_HOST 6379; do
-  sleep 1
-done
-echo "Redis pronto!"
+# Espera pelos serviços
+wait_for_service "$POSTGRES_HOST" 5432
+wait_for_service "$REDIS_HOST" 6379
 
 # Migrações
 echo "Aplicando migrações..."
