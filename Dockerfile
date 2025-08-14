@@ -19,14 +19,17 @@ RUN useradd -m user
 
 WORKDIR /app
 
-COPY requirements.txt .
+COPY requirements.txt . 
 RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install python-telegram-bot
 
 COPY . .
 
-EXPOSE 8000
+# Criar pasta de logs
+RUN mkdir -p /app/logs && chown user:user /app/logs
+
+EXPOSE 8000 8001
 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
