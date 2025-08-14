@@ -27,13 +27,14 @@ services:
     env_file:
       - .env
     ports:
-      - "8000:8000"
+      - "8000:8000"  # HTTP
+      - "8001:8001"  # WebSockets (Daphne)
     depends_on:
       - postgres
       - redis
     volumes:
       - media_volume:/app/media     # mantém uploads
-      - .:/app                       # para hot reload no dev
+      - .:/app                      # hot reload no dev
     restart: unless-stopped
 
 volumes:
