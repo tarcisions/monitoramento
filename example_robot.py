@@ -32,11 +32,12 @@ logger = logging.getLogger('ExampleRobot')
 class ExampleRobot:
     """Robô de exemplo que simula operações e se comunica com o sistema de monitoramento"""
     
-    def __init__(self, name: str, server_url: str = "http://129.148.32.147:8000"):
+    def __init__(self, name: str, server_url: str = "http://129.148.32.147:8001"):
         self.name = name
         self.server_url = server_url.rstrip('/')
         self.api_base = f"{self.server_url}/api"
-        self.ws_url = f"ws://129.148.32.147:8000/ws/robot/{name}/"
+        self.ws_url = f"ws://129.148.32.147:8001/ws/robot/{name}/"
+
         
         # Estado do robô
         self.status = "IDLE"

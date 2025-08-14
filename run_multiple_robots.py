@@ -10,10 +10,12 @@ import sys
 import argparse
 from typing import List
 
+HARD_CODED_SERVER_URL = "http://129.148.32.147:8001"
+
 class MultiRobotRunner:
     """Gerenciador para executar múltiplos robôs"""
     
-    def __init__(self, server_url: str = "http://129.148.32.147:8000"):
+    def __init__(self, server_url: str = HARD_CODED_SERVER_URL):
         self.server_url = server_url.rstrip('/')
         self.processes: List[subprocess.Popen] = []
         self.robot_names = []
@@ -102,7 +104,6 @@ def main():
     parser = argparse.ArgumentParser(description='Executar múltiplos robôs de exemplo')
     parser.add_argument('--count', '-c', type=int, default=3, help='Número de robôs para iniciar')
     parser.add_argument('--prefix', '-p', default='robot', help='Prefixo para nomes dos robôs')
-    parser.add_argument('--server', '-s', default='http://129.148.32.147:8000', help='URL do servidor')
     parser.add_argument('--verbose', '-v', action='store_true', help='Modo verboso')
     
     args = parser.parse_args()
@@ -117,7 +118,8 @@ def main():
         if response.lower() != 'y':
             return
     
-    runner = MultiRobotRunner(args.server)
+    # Forçando o endereço hardcoded
+    runner = MultiRobotRunner(HARD_CODED_SERVER_URL)
     
     try:
         runner.start_multiple_robots(args.count, args.prefix, args.verbose)
