@@ -13,8 +13,8 @@ from typing import List
 class MultiRobotRunner:
     """Gerenciador para executar múltiplos robôs"""
     
-    def __init__(self, server_url: str = "http://localhost:8000"):
-        self.server_url = server_url
+    def __init__(self, server_url: str = "http://129.148.32.147:8000"):
+        self.server_url = server_url.rstrip('/')
         self.processes: List[subprocess.Popen] = []
         self.robot_names = []
         
@@ -31,7 +31,6 @@ class MultiRobotRunner:
     def start_robot(self, name: str, verbose: bool = False) -> subprocess.Popen:
         """Iniciar um robô"""
         cmd = ["python3", "example_robot.py", "--name", name, "--server", self.server_url]
-        
         if verbose:
             cmd.append("--verbose")
         
@@ -103,7 +102,7 @@ def main():
     parser = argparse.ArgumentParser(description='Executar múltiplos robôs de exemplo')
     parser.add_argument('--count', '-c', type=int, default=3, help='Número de robôs para iniciar')
     parser.add_argument('--prefix', '-p', default='robot', help='Prefixo para nomes dos robôs')
-    parser.add_argument('--server', '-s', default='http://localhost:8000', help='URL do servidor')
+    parser.add_argument('--server', '-s', default='http://129.148.32.147:8000', help='URL do servidor')
     parser.add_argument('--verbose', '-v', action='store_true', help='Modo verboso')
     
     args = parser.parse_args()
@@ -130,4 +129,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
