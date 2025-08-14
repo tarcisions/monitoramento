@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+# Definir variável de ambiente do Django
+export DJANGO_SETTINGS_MODULE=robot_monitor.settings
+
 echo "Aplicando migrações..."
 python manage.py migrate --noinput
 
