@@ -46,7 +46,6 @@ exec gunicorn app.wsgi:application \
     --worker-class gevent \
     --worker-connections 1000 \
     --timeout 120 \
-    --keepalive 2 \
     --max-requests 1000 \
     --max-requests-jitter 100 \
     --access-logfile - \
