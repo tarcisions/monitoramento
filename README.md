@@ -1,524 +1,646 @@
-# Sistema de Monitoramento de Robôs
+# Sistema de Monitoramento e Orquestração RPA
 
-Um sistema completo de monitoramento de robôs desenvolvido com Django, que oferece monitoramento em tempo real, controle remoto e notificações via Telegram.
+Sistema completo para monitoramento e orquestração de robôs RPA com interface web, métricas em tempo real e observabilidade completa.
 
-## 🚀 Características
+## 🔧 Requisitos Mínimos
 
-### Backend
-- **Django REST Framework** para APIs RESTful
-- **Django Channels** para WebSockets em tempo real
-- **SQLite** para armazenamento de dados
-- **Redis** para cache e mensageria
-- **Integração com Telegram Bot** para notificações
+### Sistema Operacional
+- Linux (Ubuntu 20.04+ recomendado) ou Windows 10+ com WSL2
+- 4GB RAM mínimo (8GB+ recomendado)
+- 20GB espaço em disco disponível
+- Conectividade de internet para download das imagens Docker
 
-### Frontend
-- **HTML/CSS/JS puro** com design responsivo
-- **WebSockets** para atualizações em tempo real
-- **Chart.js** para gráficos e visualizações
-- **Interface intuitiva** para controle de robôs
-
-### Funcionalidades
-- 📊 **Dashboard em tempo real** com estatísticas e gráficos
-- 🤖 **Gerenciamento de robôs** (adicionar, controlar, monitorar)
-- 📝 **Sistema de logs** com filtros por nível e robô
-- 🎮 **Controle remoto** (iniciar, parar, reiniciar, pausar)
-- 📱 **Notificações Telegram** para erros e conclusões
-- 📈 **Histórico de execuções** com métricas de performance
-- 🔄 **Atualizações em tempo real** via WebSocket
-
-## 📋 Pré-requisitos
-
-- Python 3.8+
-- Redis Server
+### Software
+- Docker 20.10+
+- Docker Compose 2.0+
 - Git
+- Make (opcional, para comandos facilitados)
 
-## 🛠️ Instalação
+## 🚀 Instalação Passo a Passo
 
-### 1. Clone o repositório
+### 1. Clone o Repositório
 ```bash
 git clone <url-do-repositorio>
-cd robot_monitoring_system
+cd rpa-monitoramento
 ```
 
-### 2. Instale as dependências
+### 2. Configure as Variáveis de Ambiente
 ```bash
-pip install -r requirements.txt
+cp server/.env.example server/.env
 ```
 
-### 3. Configure o Redis
+Edite o arquivo `server/.env` com suas configurações:
 ```bash
-# Ubuntu/Debian
-sudo apt update
-sudo apt install redis-server
-sudo systemctl start redis-server
-sudo systemctl enable redis-server
-
-# Verificar se está funcionando
-redis-cli ping
-# Deve retornar: PONG
+nano server/.env
 ```
 
-### 4. Configure o banco de dados
+### 3. Construa e Execute os Serviços
 ```bash
-python manage.py makemigrations
-python manage.py migrate
+docker-compose up -d --build
 ```
 
-### 5. (Opcional) Configure o Telegram Bot
+### 4. Verifique se os Serviços Estão Rodando
 ```bash
-# Defina as variáveis de ambiente
-export TELEGRAM_BOT_TOKEN="seu_token_do_bot"
-export TELEGRAM_CHAT_ID="seu_chat_id"
-
-# Ou adicione no arquivo .env
-echo "TELEGRAM_BOT_TOKEN=seu_token_do_bot" >> .env
-echo "TELEGRAM_CHAT_ID=seu_chat_id" >> .env
+docker-compose ps
 ```
 
-## 🚀 Execução
+### 5. Acesse a Interface Web
+- Interface Principal: http://localhost
+- Grafana: http://localhost/grafana
+- Prometheus: http://localhost/prometheus
+- API: http://localhost/api
 
-### 1. Inicie o servidor Django
+### 6. Faça Login no Sistema
+Usuário padrão:
+- **Usuário**: admin
+- **Senha**: admin123
+
+## 📋 Arquitetura do Sistema
+
+### Componentes Principais
+
+#### Backend (Django REST Framework)
+- **Porta**: 8000 (interna)
+- **Tecnologias**: Python 3.11, Django 4.2, PostgreSQL, Redis, Celery
+- **Função**: API REST, autenticação JWT, processamento assíncrono
+
+#### Frontend (React + Vite)
+- **Porta**: 80 (via nginx)
+- **Tecnologias**: React 18, Vite, Bootstrap 5, Axios
+- **Função**: Interface web para gerenciamento de robôs e jobs
+
+#### Agente RPA
+- **Porta**: 9091 (métricas Prometheus)
+- **Tecnologias**: Python 3.11, Redis pub/sub, psutil
+- **Função**: Execução de comandos nos robôs, coleta de métricas
+
+#### Observabilidade
+- **Grafana**: 3000 (interna), /grafana (externa)
+- **Prometheus**: 9090 (interna), /prometheus (externa) 
+- **Loki**: 3100 (interna)
+
+#### Proxy Reverso
+- **Nginx**: 80 (externa)
+- **Função**: Roteamento de requisições, balanceamento
+
+## 🌐 Portas e Endpoints
+
+### Portas Externas (Acessíveis via Browser)
+| Serviço | Porta | URL | Descrição |
+|---------|-------|-----|----------|
+| Interface Web | 80 | http://localhost | Interface principal do sistema |
+| API REST | 80 | http://localhost/api | Endpoints da API |
+| Django Admin | 80 | http://localhost/admin | Painel administrativo |
+| Grafana | 80 | http://localhost/grafana | Dashboards de monitoramento |
+| Prometheus | 80 | http://localhost/prometheus | Interface do Prometheus |
+
+### Portas Internas (Comunicação entre Serviços)
+| Serviço | Porta | Função |
+|---------|-------|---------|
+| PostgreSQL | 5432 | Banco de dados principal |
+| Redis | 6379 | Message broker e cache |
+| Django Backend | 8000 | API REST interna |
+| Grafana | 3000 | Interface interna |
+| Prometheus | 9090 | Coleta de métricas |
+| Loki | 3100 | Agregação de logs |
+| Agente RPA | 9091 | Métricas do agente |
+
+## ⚙️ Variáveis de Ambiente
+
+### Configurações do Banco de Dados
 ```bash
-python manage.py runserver 0.0.0.0:8000
+# PostgreSQL
+POSTGRES_DB=rpa_monitoramento          # Nome do banco
+POSTGRES_USER=rpa_user                 # Usuário do banco
+POSTGRES_PASSWORD=rpa_password         # Senha do banco
+POSTGRES_HOST=postgres                 # Host do banco
+POSTGRES_PORT=5432                     # Porta do banco
 ```
 
-### 2. Acesse o dashboard
-Abra seu navegador e vá para: `http://localhost:8000`
-
-### 3. Execute robôs de exemplo
+### Configurações do Redis
 ```bash
-# Executar um robô
-python example_robot.py --name meu_robo
-
-# Executar múltiplos robôs
-python run_multiple_robots.py --count 3
-
-# Ver opções disponíveis
-python example_robot.py --help
-python run_multiple_robots.py --help
-```
-
-## 📖 Uso
-
-### Dashboard Principal
-- **Estatísticas em tempo real**: Total de robôs, robôs ativos, execuções
-- **Lista de robôs**: Visualize todos os robôs cadastrados
-- **Logs em tempo real**: Monitore logs com filtros por nível e robô
-- **Gráficos**: Distribuição de status e logs por nível
-
-### Controle de Robôs
-1. Clique em "Controlar" em qualquer robô
-2. Use os botões para enviar comandos:
-   - **Iniciar**: Inicia o robô
-   - **Parar**: Para o robô
-   - **Reiniciar**: Reinicia o robô
-   - **Pausar**: Pausa a execução
-
-### Adicionando Robôs
-1. Clique em "Adicionar Robô"
-2. Preencha as informações:
-   - Nome (obrigatório)
-   - Descrição (opcional)
-   - Endereço IP (opcional)
-
-### Filtros de Logs
-- **Por nível**: DEBUG, INFO, WARNING, ERROR, CRITICAL
-- **Por robô**: Selecione um robô específico
-- **Limpar**: Remove todos os logs da visualização
-
-## 🔧 API REST
-
-### Endpoints Principais
-
-#### Robôs
-- `GET /api/robots/` - Listar robôs
-- `POST /api/robots/` - Criar robô
-- `GET /api/robots/{id}/` - Detalhes do robô
-- `GET /api/robots/{id}/logs/` - Logs do robô
-
-#### Logs
-- `POST /api/logs/` - Criar log
-- `GET /api/logs/list/` - Listar logs com filtros
-
-#### Status
-- `POST /api/status/` - Atualizar status do robô
-
-#### Controle
-- `POST /api/control/` - Enviar comando para robô
-
-#### Dashboard
-- `GET /api/dashboard/` - Dados do dashboard
-
-#### Health Check
-- `GET /api/health/` - Verificar saúde da API
-
-### Exemplo de Uso da API
-
-```python
-import requests
-
-# Criar um log
-response = requests.post('http://localhost:8000/api/logs/', json={
-    'robot_name': 'meu_robo',
-    'level': 'INFO',
-    'message': 'Robô iniciado com sucesso'
-})
-
-# Enviar comando
-response = requests.post('http://localhost:8000/api/control/', json={
-    'robot_name': 'meu_robo',
-    'command': 'START'
-})
-
-# Atualizar status
-response = requests.post('http://localhost:8000/api/status/', json={
-    'robot_name': 'meu_robo',
-    'status': 'RUNNING',
-    'cpu_usage': 45.2,
-    'memory_usage': 67.8
-})
-```
-
-## 🔌 WebSockets
-
-### Conexões
-- **Dashboard**: `ws://localhost:8000/ws/monitoring/`
-- **Robô específico**: `ws://localhost:8000/ws/robot/{nome_do_robo}/`
-
-### Mensagens Suportadas
-
-#### Para o Dashboard
-```javascript
-// Conectar
-const socket = new WebSocket('ws://localhost:8000/ws/monitoring/');
-
-// Receber atualizações
-socket.onmessage = function(event) {
-    const data = JSON.parse(event.data);
-    console.log('Tipo:', data.type);
-    console.log('Dados:', data.data);
-};
-```
-
-#### Para Robôs
-```python
-import asyncio
-import websockets
-import json
-
-async def robot_client():
-    uri = "ws://localhost:8000/ws/robot/meu_robo/"
-    async with websockets.connect(uri) as websocket:
-        # Enviar heartbeat
-        await websocket.send(json.dumps({
-            'type': 'heartbeat',
-            'robot_name': 'meu_robo'
-        }))
-        
-        # Escutar comandos
-        async for message in websocket:
-            data = json.loads(message)
-            print(f"Comando recebido: {data}")
-```
-
-## 📱 Integração com Telegram
-
-### Configuração do Bot
-
-1. **Crie um bot no Telegram**:
-   - Fale com @BotFather no Telegram
-   - Use `/newbot` e siga as instruções
-   - Anote o token do bot
-
-2. **Obtenha o Chat ID**:
-   - Adicione o bot ao seu chat/grupo
-   - Envie uma mensagem para o bot
-   - Acesse: `https://api.telegram.org/bot{TOKEN}/getUpdates`
-   - Encontre o `chat.id` na resposta
-
-3. **Configure as variáveis**:
-```bash
-export TELEGRAM_BOT_TOKEN="123456789:ABCdefGHIjklMNOpqrsTUVwxyz"
-export TELEGRAM_CHAT_ID="-123456789"
-```
-
-### Teste a Integração
-```bash
-python manage.py test_telegram --message "Teste do sistema de monitoramento"
-```
-
-### Notificações Automáticas
-O sistema envia notificações automaticamente para:
-- ❌ **Erros de robôs**
-- ✅ **Conclusão de execuções**
-- 🚨 **Logs críticos**
-- 📴 **Robôs offline**
-
-## 🤖 Desenvolvendo Robôs
-
-### Estrutura Básica
-```python
-import requests
-import websockets
-import asyncio
-import json
-
-class MeuRobo:
-    def __init__(self, nome):
-        self.nome = nome
-        self.api_base = "http://localhost:8000/api"
-        self.ws_url = f"ws://localhost:8000/ws/robot/{nome}/"
-    
-    def enviar_log(self, nivel, mensagem):
-        requests.post(f"{self.api_base}/logs/", json={
-            'robot_name': self.nome,
-            'level': nivel,
-            'message': mensagem
-        })
-    
-    def atualizar_status(self, status, **kwargs):
-        data = {
-            'robot_name': self.nome,
-            'status': status,
-            **kwargs
-        }
-        requests.post(f"{self.api_base}/status/", json=data)
-    
-    async def conectar_websocket(self):
-        async with websockets.connect(self.ws_url) as ws:
-            # Escutar comandos
-            async for message in ws:
-                comando = json.loads(message)
-                await self.processar_comando(comando)
-    
-    async def processar_comando(self, comando):
-        tipo = comando.get('type')
-        if tipo == 'command':
-            # Processar comando recebido
-            pass
-```
-
-### Comandos Suportados
-- `START` - Iniciar robô
-- `STOP` - Parar robô  
-- `RESTART` - Reiniciar robô
-- `PAUSE` - Pausar execução
-- `RESUME` - Retomar execução
-- `CUSTOM` - Comando personalizado
-
-### Níveis de Log
-- `DEBUG` - Informações de depuração
-- `INFO` - Informações gerais
-- `WARNING` - Avisos
-- `ERROR` - Erros
-- `CRITICAL` - Erros críticos (geram notificação)
-
-## 📊 Monitoramento e Métricas
-
-### Métricas Coletadas
-- **Status dos robôs** (IDLE, RUNNING, STOPPED, ERROR)
-- **Uso de recursos** (CPU, memória, disco)
-- **Logs por nível** e frequência
-- **Tempo de execução** de tarefas
-- **Histórico de comandos**
-
-### Gráficos Disponíveis
-- **Distribuição de status** dos robôs
-- **Logs por nível** nas últimas 24h
-- **Robôs mais ativos**
-- **Tempo médio de execução**
-
-## 🔧 Configuração Avançada
-
-### Variáveis de Ambiente
-```bash
-# Django
-DEBUG=True
-SECRET_KEY=sua_chave_secreta
-
-# Banco de dados
-DATABASE_URL=sqlite:///db.sqlite3
-
-# Redis
-REDIS_URL=redis://localhost:6379/0
-
-# Telegram
-TELEGRAM_BOT_TOKEN=seu_token
-TELEGRAM_CHAT_ID=seu_chat_id
-
-# Logging
-LOG_LEVEL=INFO
+# Redis URLs
+REDIS_URL=redis://redis:6379/0         # URL principal do Redis
+CELERY_BROKER_URL=redis://redis:6379/0 # Broker do Celery
+CELERY_RESULT_BACKEND=redis://redis:6379/0 # Backend de resultados
 ```
 
 ### Configurações do Django
-Edite `robot_monitor/settings.py` para:
-- Alterar configurações de banco de dados
-- Configurar CORS para produção
-- Ajustar configurações de cache
-- Personalizar logging
-
-### Configurações do Redis
-Para produção, configure Redis com:
-- Persistência de dados
-- Autenticação
-- Clustering (se necessário)
-
-## 🚀 Deploy em Produção
-
-### Usando Docker (Recomendado)
-```dockerfile
-# Dockerfile
-FROM python:3.11-slim
-
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-
-COPY . .
-EXPOSE 8000
-
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
-```
-
-```yaml
-# docker-compose.yml
-version: '3.8'
-services:
-  web:
-    build: .
-    ports:
-      - "8000:8000"
-    depends_on:
-      - redis
-    environment:
-      - REDIS_URL=redis://redis:6379/0
-  
-  redis:
-    image: redis:alpine
-    ports:
-      - "6379:6379"
-```
-
-### Deploy Manual
-1. Configure um servidor web (Nginx/Apache)
-2. Use um WSGI server (Gunicorn/uWSGI)
-3. Configure SSL/HTTPS
-4. Configure backup do banco de dados
-5. Configure monitoramento do sistema
-
-## 🧪 Testes
-
-### Executar Testes
 ```bash
-# Testes do Django
-python manage.py test
-
-# Teste do Telegram
-python manage.py test_telegram
-
-# Teste de robô
-python example_robot.py --name teste_robo
+# Django
+SECRET_KEY=sua-chave-secreta-muito-segura-aqui  # Chave secreta (ALTERE!)
+DEBUG=False                                      # Modo debug (produção: False)
+ALLOWED_HOSTS=*                                  # Hosts permitidos
 ```
 
-### Testes de Carga
+### Configurações de Usuários Padrão
 ```bash
-# Múltiplos robôs
-python run_multiple_robots.py --count 10
+# Superusuário Django
+DJANGO_SUPERUSER_USERNAME=admin        # Nome do admin
+DJANGO_SUPERUSER_EMAIL=admin@rpa.local # Email do admin
+DJANGO_SUPERUSER_PASSWORD=admin123     # Senha do admin (ALTERE!)
 
-# Teste de API
-curl -X POST http://localhost:8000/api/logs/ \
-  -H "Content-Type: application/json" \
-  -d '{"robot_name":"teste","level":"INFO","message":"teste"}'
+# Grafana
+GF_SECURITY_ADMIN_USER=admin           # Usuário admin Grafana
+GF_SECURITY_ADMIN_PASSWORD=admin       # Senha admin Grafana (ALTERE!)
 ```
 
-## 🐛 Solução de Problemas
+### Configurações do Agente
+```bash
+# Agente RPA
+AGENT_TOKEN=token-agente-padrao        # Token de autenticação do agente
+AGENT_NAME=agente-01                   # Nome identificador do agente
+```
+
+## 📊 Como Usar o Sistema
+
+### 1. Gerenciamento de Robôs
+
+#### Cadastrar um Novo Robô
+1. Acesse http://localhost
+2. Faça login com admin/admin123
+3. Vá para "Robôs" → "Novo Robô"
+4. Preencha os dados:
+   - **Nome**: Nome identificador do robô
+   - **Host**: IP ou hostname da máquina
+   - **Token do Agente**: Token para autenticação
+   - **Ativo**: Marque se o robô está disponível
+
+#### Instalar o Agente no Robô
+1. Copie a pasta `agent/` para a máquina do robô
+2. Configure as variáveis de ambiente:
+   ```bash
+   export AGENT_TOKEN="seu-token-aqui"
+   export AGENT_NAME="nome-do-agente"
+   export REDIS_URL="redis://ip-do-servidor:6379/0"
+   ```
+3. Execute o agente:
+   ```bash
+   cd agent/
+   python main.py
+   ```
+
+### 2. Gerenciamento de Jobs
+
+#### Criar um Novo Job
+1. Vá para "Jobs" → "Novo Job"
+2. Configure:
+   - **Nome**: Nome descritivo do job
+   - **Comando**: Comando a ser executado no robô
+   - **Timeout**: Tempo limite em segundos
+   - **Parâmetros Padrão**: JSON com parâmetros (opcional)
+   - **Ativo**: Se o job pode ser executado
+
+Exemplo de Job:
+```json
+{
+  "nome": "Processamento de Notas Fiscais",
+  "comando": "python /opt/scripts/processar_nf.py",
+  "timeout_s": 1800,
+  "parametros_padrao": {
+    "diretorio": "/data/nf_pendentes",
+    "formato": "xml",
+    "validar": true
+  }
+}
+```
+
+### 3. Execução de Jobs
+
+#### Executar Job Manualmente
+1. Vá para "Execuções" → "Nova Execução"
+2. Selecione:
+   - **Robô**: Robô que executará o job
+   - **Job**: Job a ser executado
+   - **Parâmetros**: Parâmetros específicos (JSON)
+3. Clique em "Executar"
+
+#### Acompanhar Execuções
+1. Acesse "Execuções" para ver status em tempo real
+2. Clique em uma execução para ver detalhes:
+   - Logs de execução
+   - Tempo decorrido
+   - Status atual
+   - Métricas de performance
+
+### 4. Monitoramento
+
+#### Dashboards Grafana
+1. Acesse http://localhost/grafana
+2. Login: admin/admin
+3. Dashboards disponíveis:
+   - **RPA Overview**: Visão geral do sistema
+   - **RPA Logs**: Análise de logs
+
+#### Métricas Prometheus
+- Taxa de sucesso de jobs
+- Tempo médio de execução
+- Status dos robôs
+- Uso de recursos do sistema
+
+## 🔧 Comandos Úteis
+
+### Docker Compose
+```bash
+# Iniciar todos os serviços
+docker-compose up -d
+
+# Parar todos os serviços
+docker-compose down
+
+# Ver logs de um serviço específico
+docker-compose logs -f backend
+
+# Reiniciar um serviço
+docker-compose restart backend
+
+# Reconstruir e reiniciar
+docker-compose up -d --build
+
+# Ver status dos serviços
+docker-compose ps
+```
+
+### Makefile (Comandos Facilitados)
+```bash
+# Configuração inicial
+make setup
+
+# Iniciar sistema
+make start
+
+# Parar sistema
+make stop
+
+# Ver logs
+make logs
+
+# Backup do banco
+make backup
+
+# Restaurar backup
+make restore
+
+# Limpar dados
+make clean
+```
+
+### Gerenciamento do Django
+```bash
+# Acessar shell do Django
+docker-compose exec backend python manage.py shell
+
+# Criar superusuário
+docker-compose exec backend python manage.py createsuperuser
+
+# Aplicar migrações
+docker-compose exec backend python manage.py migrate
+
+# Coletar arquivos estáticos
+docker-compose exec backend python manage.py collectstatic
+```
+
+## 🛠️ Manutenção do Sistema
+
+### Backup Regular
+
+#### Backup do Banco de Dados
+```bash
+# Criar backup
+docker-compose exec postgres pg_dump -U rpa_user rpa_monitoramento > backup_$(date +%Y%m%d_%H%M%S).sql
+
+# Restaurar backup
+docker-compose exec -i postgres psql -U rpa_user rpa_monitoramento < backup_20240101_120000.sql
+```
+
+#### Backup de Configurações
+```bash
+# Backup das configurações
+tar -czf config_backup_$(date +%Y%m%d).tar.gz \
+  server/.env \
+  observabilidade/ \
+  nginx/nginx.conf \
+  docker-compose.yml
+```
+
+### Limpeza de Dados
+
+#### Limpar Logs Antigos
+```bash
+# Manter apenas logs dos últimos 30 dias
+docker-compose exec backend python manage.py shell -c "
+from app.core.models import LogExecucao
+from datetime import datetime, timedelta
+LogExecucao.objects.filter(
+    data_hora__lt=datetime.now() - timedelta(days=30)
+).delete()
+"
+```
+
+#### Limpar Execuções Antigas
+```bash
+# Manter apenas execuções dos últimos 90 dias
+docker-compose exec backend python manage.py shell -c "
+from app.core.models import ExecucaoRobo
+from datetime import datetime, timedelta
+ExecucaoRobo.objects.filter(
+    data_inicio__lt=datetime.now() - timedelta(days=90)
+).delete()
+"
+```
+
+### Monitoramento de Performance
+
+#### Verificar Uso de Recursos
+```bash
+# Uso de CPU e Memória
+docker stats
+
+# Espaço em disco
+docker system df
+
+# Logs de sistema
+docker-compose logs --tail=100
+```
+
+#### Métricas Importantes
+- Taxa de sucesso dos jobs (>95%)
+- Tempo médio de execução (<timeout configurado)
+- Uso de memória (<80%)
+- Espaço em disco (<85%)
+
+### Atualizações
+
+#### Atualizar o Sistema
+```bash
+# 1. Fazer backup
+make backup
+
+# 2. Baixar atualizações
+git pull origin main
+
+# 3. Reconstruir containers
+docker-compose build --no-cache
+
+# 4. Aplicar migrações
+docker-compose run backend python manage.py migrate
+
+# 5. Reiniciar sistema
+docker-compose up -d
+```
+
+## 🔍 Troubleshooting
 
 ### Problemas Comuns
 
-#### Redis não conecta
-```bash
-# Verificar se Redis está rodando
-redis-cli ping
+#### 1. Containers não Iniciam
 
-# Iniciar Redis
-sudo systemctl start redis-server
+**Sintoma**: `docker-compose up` falha
+
+**Possíveis Causas e Soluções**:
+```bash
+# Verificar logs
+docker-compose logs
+
+# Verificar portas ocupadas
+netstat -tulpn | grep :80
+netstat -tulpn | grep :5432
+
+# Limpar containers antigos
+docker-compose down -v
+docker system prune -f
+
+# Reconstruir do zero
+docker-compose build --no-cache
+docker-compose up -d
 ```
 
-#### WebSocket não conecta
-- Verifique se o servidor Django está rodando
-- Confirme que não há firewall bloqueando
-- Teste com `ws://` em desenvolvimento
+#### 2. Erro de Conexão com Banco
 
-#### Telegram não funciona
+**Sintoma**: Django não consegue conectar ao PostgreSQL
+
+**Soluções**:
 ```bash
-# Testar configuração
-python manage.py test_telegram
+# Verificar se PostgreSQL está rodando
+docker-compose ps postgres
 
-# Verificar variáveis
-echo $TELEGRAM_BOT_TOKEN
-echo $TELEGRAM_CHAT_ID
+# Verificar logs do PostgreSQL
+docker-compose logs postgres
+
+# Testar conexão manual
+docker-compose exec postgres psql -U rpa_user -d rpa_monitoramento
+
+# Recriar volume do banco
+docker-compose down -v
+docker volume rm rpa-monitoramento_postgres_data
+docker-compose up -d
 ```
 
-#### Robô não aparece no dashboard
-- Verifique se o robô está enviando dados
-- Confirme a URL da API
-- Verifique logs do servidor Django
+#### 3. Redis não Disponível
 
-### Logs de Debug
+**Sintoma**: Celery workers não conseguem conectar
+
+**Soluções**:
 ```bash
-# Ativar debug no Django
-export DEBUG=True
+# Verificar status do Redis
+docker-compose ps redis
 
-# Ver logs do servidor
-python manage.py runserver --verbosity=2
+# Testar conexão Redis
+docker-compose exec redis redis-cli ping
 
-# Logs do robô
-python example_robot.py --verbose
+# Reiniciar Redis
+docker-compose restart redis
+
+# Verificar configuração
+echo $REDIS_URL
 ```
 
-## 📝 Changelog
+#### 4. Interface Web não Carrega
 
-### v1.0.0 (2025-08-13)
-- ✨ Lançamento inicial
-- 🚀 Sistema completo de monitoramento
-- 📱 Integração com Telegram
-- 🎨 Dashboard responsivo
-- 🤖 Robô de exemplo
-- 📊 Gráficos e métricas
-- 🔄 WebSockets em tempo real
+**Sintoma**: Página em branco ou erro 502
 
-## 🤝 Contribuição
+**Soluções**:
+```bash
+# Verificar status do nginx
+docker-compose ps nginx
 
-1. Fork o projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
-5. Abra um Pull Request
+# Verificar logs do nginx
+docker-compose logs nginx
+
+# Verificar se backend está rodando
+docker-compose ps backend
+
+# Testar endpoint diretamente
+curl http://localhost/api/health/
+
+# Reconstruir frontend
+docker-compose build frontend
+docker-compose up -d frontend
+```
+
+#### 5. Agente não Conecta
+
+**Sintoma**: Robô aparece offline no painel
+
+**Soluções**:
+```bash
+# Verificar logs do agente
+python agent/main.py
+
+# Verificar token de autenticação
+echo $AGENT_TOKEN
+
+# Testar conectividade Redis
+telnet <ip-servidor> 6379
+
+# Verificar firewall
+sudo ufw status
+sudo firewall-cmd --list-ports
+```
+
+#### 6. Jobs não Executam
+
+**Sintoma**: Jobs ficam na fila sem executar
+
+**Soluções**:
+```bash
+# Verificar workers Celery
+docker-compose logs celery_worker
+
+# Verificar fila do Celery
+docker-compose exec backend python manage.py shell -c "
+from celery import Celery
+app = Celery('app')
+i = app.control.inspect()
+print('Active:', i.active())
+print('Scheduled:', i.scheduled())
+"
+
+# Reiniciar workers
+docker-compose restart celery_worker celery_beat
+```
+
+#### 7. Grafana não Mostra Dados
+
+**Sintoma**: Dashboards vazios ou "No data"
+
+**Soluções**:
+```bash
+# Verificar se Prometheus está coletando
+curl http://localhost/prometheus/api/v1/targets
+
+# Verificar métricas disponíveis
+curl http://localhost/api/metrics/
+
+# Reiniciar Prometheus
+docker-compose restart prometheus
+
+# Verificar configuração do datasource
+# Grafana → Configuration → Data Sources
+```
+
+### Logs Importantes
+
+#### Locais dos Logs
+```bash
+# Logs do Django
+docker-compose logs backend
+
+# Logs do Celery
+docker-compose logs celery_worker
+docker-compose logs celery_beat
+
+# Logs do Nginx
+docker-compose logs nginx
+
+# Logs do Agente
+# (no host do robô)
+tail -f /var/log/rpa_agent.log
+```
+
+#### Níveis de Log
+- **DEBUG**: Informações detalhadas de desenvolvimento
+- **INFO**: Informações gerais de operação
+- **WARNING**: Situações que merecem atenção
+- **ERROR**: Erros que impedem operação normal
+- **CRITICAL**: Erros críticos que afetam o sistema
+
+### Monitoramento de Saúde
+
+#### Endpoints de Health Check
+```bash
+# API Backend
+curl http://localhost/api/health/
+
+# Banco de dados
+curl http://localhost/api/health/database/
+
+# Redis
+curl http://localhost/api/health/redis/
+
+# Celery
+curl http://localhost/api/health/celery/
+```
+
+#### Alertas Recomendados
+
+Configure alertas para:
+- Uso de CPU > 80%
+- Uso de memória > 85%
+- Uso de disco > 90%
+- Taxa de erro > 5%
+- Tempo de resposta > 5s
+- Robôs offline > 10min
+
+## 📞 Suporte
+
+### Informações para Suporte
+
+Ao reportar problemas, inclua:
+
+1. **Versão do sistema**: `git describe --tags`
+2. **Ambiente**: Desenvolvimento/Produção
+3. **Sistema operacional**: `uname -a`
+4. **Versão Docker**: `docker --version`
+5. **Logs relevantes**: últimas 50 linhas
+6. **Configuração**: arquivos .env (sem senhas)
+
+### Coleta de Informações
+
+```bash
+# Script para coleta automática
+#!/bin/bash
+echo "=== INFORMAÇÕES DO SISTEMA ==="
+date
+uname -a
+docker --version
+docker-compose --version
+
+echo -e "\n=== STATUS DOS SERVIÇOS ==="
+docker-compose ps
+
+echo -e "\n=== USO DE RECURSOS ==="
+docker stats --no-stream
+
+echo -e "\n=== LOGS RECENTES ==="
+docker-compose logs --tail=20
+```
 
 ## 📄 Licença
 
-Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalhes.
+Este projeto está sob a licença MIT. Veja o arquivo LICENSE para mais detalhes.
 
-## 👥 Autores
+## 🏗️ Contribuindo
 
-- **Desenvolvedor Principal** - Sistema de Monitoramento de Robôs
+1. Faça fork do repositório
+2. Crie uma branch para sua feature (`git checkout -b feature/nova-funcionalidade`)
+3. Commit suas mudanças (`git commit -am 'Adiciona nova funcionalidade'`)
+4. Push para a branch (`git push origin feature/nova-funcionalidade`)
+5. Crie um Pull Request
 
-## 🙏 Agradecimentos
+## 📚 Documentação Adicional
 
-- Django e Django REST Framework
-- Django Channels para WebSockets
-- Chart.js para gráficos
-- Redis para cache e mensageria
-- Telegram Bot API
-- Comunidade open source
-
----
-
-**📞 Suporte**: Para dúvidas ou problemas, abra uma issue no repositório.
-
-**🔗 Links Úteis**:
-- [Documentação do Django](https://docs.djangoproject.com/)
-- [Django Channels](https://channels.readthedocs.io/)
-- [Telegram Bot API](https://core.telegram.org/bots/api)
-- [Chart.js](https://www.chartjs.org/)
-
+- **API Documentation**: `/docs/postman_collection.json`
+- **Architecture Overview**: `/docs/architecture.md`
+- **Development Guide**: `/docs/development.md`
+- **Deployment Guide**: `/docs/deployment.md`
