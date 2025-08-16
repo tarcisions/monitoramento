@@ -90,7 +90,7 @@ services:
       REDIS_URL: redis://redis:6379/0
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
-      SECRET_KEY: sua-chave-secreta-muito-segura-aqui
+      SECRET_KEY: m8xJ5QWl2hT6vZk9sGfR1pNq3YbD4eXc7VwU0jHfLqS2tKmP
       DEBUG: "False"
     depends_on:
       postgres:
@@ -205,10 +205,18 @@ services:
       - rpa_network
     restart: unless-stopped
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    networks:
+      - rpa_network
+    restart: unless-stopped
+
   nginx:
     build:
-      context: ./nginx
-      dockerfile: Dockerfile
+      context: .   # raiz do projeto
+      dockerfile: ./nginx/Dockerfile
     ports:
       - "80:80"
     depends_on:
