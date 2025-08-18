@@ -205,14 +205,6 @@ services:
       - rpa_network
     restart: unless-stopped
 
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    networks:
-      - rpa_network
-    restart: unless-stopped
-
   nginx:
     build:
       context: .   # raiz do projeto
