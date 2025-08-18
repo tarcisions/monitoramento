@@ -47,21 +47,8 @@ services:
     build:
       context: ./server
       dockerfile: Dockerfile
-    environment:
-      POSTGRES_DB: rpa_monitoramento
-      POSTGRES_USER: rpa_user
-      POSTGRES_PASSWORD: rpa_password
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      REDIS_URL: redis://redis:6379/0
-      CELERY_BROKER_URL: redis://redis:6379/0
-      CELERY_RESULT_BACKEND: redis://redis:6379/0
-      DJANGO_SUPERUSER_USERNAME: admin
-      DJANGO_SUPERUSER_EMAIL: admin@rpa.local
-      DJANGO_SUPERUSER_PASSWORD: admin123
-      SECRET_KEY: m8xJ5QWl2hT6vZk9sGfR1pNq3YbD4eXc7VwU0jHfLqS2tKmP
-      DEBUG: "False"
-      ALLOWED_HOSTS: "*"
+    env_file:
+      - ./.env.example
     depends_on:
       postgres:
         condition: service_healthy
@@ -81,17 +68,8 @@ services:
       context: ./server
       dockerfile: Dockerfile
     command: celery -A app worker --loglevel=info
-    environment:
-      POSTGRES_DB: rpa_monitoramento
-      POSTGRES_USER: rpa_user
-      POSTGRES_PASSWORD: rpa_password
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      REDIS_URL: redis://redis:6379/0
-      CELERY_BROKER_URL: redis://redis:6379/0
-      CELERY_RESULT_BACKEND: redis://redis:6379/0
-      SECRET_KEY: m8xJ5QWl2hT6vZk9sGfR1pNq3YbD4eXc7VwU0jHfLqS2tKmP
-      DEBUG: "False"
+    env_file:
+      - ./.env.example
     depends_on:
       postgres:
         condition: service_healthy
@@ -106,17 +84,8 @@ services:
       context: ./server
       dockerfile: Dockerfile
     command: celery -A app beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
-    environment:
-      POSTGRES_DB: rpa_monitoramento
-      POSTGRES_USER: rpa_user
-      POSTGRES_PASSWORD: rpa_password
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      REDIS_URL: redis://redis:6379/0
-      CELERY_BROKER_URL: redis://redis:6379/0
-      CELERY_RESULT_BACKEND: redis://redis:6379/0
-      SECRET_KEY: m8xJ5QWl2hT6vZk9sGfR1pNq3YbD4eXc7VwU0jHfLqS2tKmP
-      DEBUG: "False"
+    env_file:
+      - ./.env.example
     depends_on:
       postgres:
         condition: service_healthy
@@ -192,10 +161,8 @@ services:
     build:
       context: ./agent
       dockerfile: Dockerfile
-    environment:
-      REDIS_URL: redis://redis:6379/0
-      AGENT_TOKEN: token-agente-padrao
-      AGENT_NAME: agente-01
+    env_file:
+      - ./.env.example
     volumes:
       - agent_logs:/logs
     depends_on:
