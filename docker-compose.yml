@@ -3,16 +3,14 @@ version: '3.8'
 services:
   postgres:
     image: postgres:15
-    environment:
-      POSTGRES_DB: rpa_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+    env_file:
+      - .env
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -20,17 +18,8 @@ services:
 
   backend:
     build: ./server
-    environment:
-      - DEBUG=False
-      - SECRET_KEY=django-secret-key-change-in-production
-      - DB_NAME=rpa_db
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DJANGO_SUPERUSER_USERNAME=admin
-      - DJANGO_SUPERUSER_PASSWORD=admin123
-      - DJANGO_SUPERUSER_EMAIL=admin@example.com
+    env_file:
+      - .env
     depends_on:
       postgres:
         condition: service_healthy
@@ -58,4 +47,3 @@ services:
 
 volumes:
   postgres_data:
-
