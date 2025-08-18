@@ -1,186 +1,61 @@
 version: '3.8'
 
-volumes:
-  postgres_data:
-  redis_data:
-  grafana_data:
-  prometheus_data:
-  loki_data:
-  agent_logs:
-
-networks:
-  rpa_network:
-    driver: bridge
-
 services:
   postgres:
     image: postgres:15
     environment:
-      POSTGRES_DB: rpa_monitoramento
-      POSTGRES_USER: rpa_user
-      POSTGRES_PASSWORD: rpa_password
+      POSTGRES_DB: rpa_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    networks:
-      - rpa_network
+    ports:
+      - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U rpa_user -d rpa_monitoramento"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-
-  redis:
-    image: redis:7-alpine
-    volumes:
-      - redis_data:/data
-    networks:
-      - rpa_network
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
     restart: unless-stopped
 
   backend:
-    build:
-      context: ./server
-      dockerfile: Dockerfile
-    env_file:
-      - ./.env.example
+    build: ./server
+    environment:
+      - DEBUG=False
+      - SECRET_KEY=django-secret-key-change-in-production
+      - DB_NAME=rpa_db
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DJANGO_SUPERUSER_USERNAME=admin
+      - DJANGO_SUPERUSER_PASSWORD=admin123
+      - DJANGO_SUPERUSER_EMAIL=admin@example.com
     depends_on:
       postgres:
         condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - rpa_network
+    ports:
+      - "8000:8000"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/admin/"]
       interval: 30s
       timeout: 10s
       retries: 3
     restart: unless-stopped
 
-  celery_worker:
-    build:
-      context: ./server
-      dockerfile: Dockerfile
-    command: celery -A app worker --loglevel=info
-    env_file:
-      - ./.env.example
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - rpa_network
-    restart: unless-stopped
-
-  celery_beat:
-    build:
-      context: ./server
-      dockerfile: Dockerfile
-    command: celery -A app beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
-    env_file:
-      - ./.env.example
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - rpa_network
-    restart: unless-stopped
-
-  loki:
-    image: grafana/loki:2.9.0
-    command: -config.file=/etc/loki/local-config.yaml
-    volumes:
-      - ./observabilidade/loki-config.yml:/etc/loki/local-config.yaml
-      - loki_data:/loki
-    ports:
-      - "3100:3100"
-    networks:
-      - rpa_network
-    restart: unless-stopped
-
-  promtail:
-    image: grafana/promtail:2.9.0
-    command: -config.file=/etc/promtail/config.yml
-    volumes:
-      - ./observabilidade/promtail-config.yml:/etc/promtail/config.yml
-      - agent_logs:/logs
-      - /var/log:/var/log:ro
-    networks:
-      - rpa_network
-    depends_on:
-      - loki
-    restart: unless-stopped
-
-  prometheus:
-    image: prom/prometheus:v2.47.0
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/etc/prometheus/console_libraries'
-      - '--web.console.templates=/etc/prometheus/consoles'
-      - '--storage.tsdb.retention.time=200h'
-      - '--web.enable-lifecycle'
-    volumes:
-      - ./observabilidade/prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus_data:/prometheus
-    ports:
-      - "9090:9090"
-    networks:
-      - rpa_network
-    restart: unless-stopped
-
-  grafana:
-    image: grafana/grafana:10.1.0
-    environment:
-      GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: admin
-      GF_USERS_ALLOW_SIGN_UP: "false"
-    volumes:
-      - grafana_data:/var/lib/grafana
-      - ./observabilidade/grafana/provisioning:/etc/grafana/provisioning
-      - ./observabilidade/grafana/dashboards:/var/lib/grafana/dashboards
-    ports:
-      - "3000:3000"
-    networks:
-      - rpa_network
-    depends_on:
-      - prometheus
-      - loki
-    restart: unless-stopped
-
-  agent:
-    build:
-      context: ./agent
-      dockerfile: Dockerfile
-    env_file:
-      - ./.env.example
-    volumes:
-      - agent_logs:/logs
-    depends_on:
-      redis:
-        condition: service_healthy
-    networks:
-      - rpa_network
-    restart: unless-stopped
-
-  nginx:
-    build:
-      context: .   # raiz do projeto
-      dockerfile: ./nginx/Dockerfile
-    ports:
-      - "80:80"
+  frontend:
+    build: ./frontend
     depends_on:
       - backend
-      - grafana
-    networks:
-      - rpa_network
+    ports:
+      - "80:80"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     restart: unless-stopped
+
+volumes:
+  postgres_data:
+

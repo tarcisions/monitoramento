@@ -1,53 +1,63 @@
-import React, { useState, useEffect } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
-import Layout from './components/Layout'
-import Login from './components/Login'
-import Dashboard from './components/Dashboard'
-import Robots from './pages/Robots'
+import React from 'react'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { AuthProvider, useAuth } from './services/AuthContext'
+import Header from './components/Header'
+import Login from './pages/Login'
+import Dashboard from './pages/Dashboard'
+import Robos from './pages/Robos'
 import Jobs from './pages/Jobs'
-import Executions from './pages/Executions'
-import { isAuthenticated } from './services/auth'
+import Execucoes from './pages/Execucoes'
+
+function ProtectedRoute({ children }) {
+  const { token } = useAuth()
+  return token ? children : <Navigate to="/login" />
+}
 
 function App() {
-  const [autenticado, setAutenticado] = useState(false)
-  const [carregando, setCarregando] = useState(true)
-
-  useEffect(() => {
-    const verificarAutenticacao = () => {
-      const auth = isAuthenticated()
-      setAutenticado(auth)
-      setCarregando(false)
-    }
-
-    verificarAutenticacao()
-  }, [])
-
-  if (carregando) {
-    return (
-      <div className="d-flex justify-content-center align-items-center" style={{height: '100vh'}}>
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Carregando...</span>
-        </div>
-      </div>
-    )
-  }
-
-  if (!autenticado) {
-    return <Login onLogin={() => setAutenticado(true)} />
-  }
-
   return (
-    <Layout onLogout={() => setAutenticado(false)}>
-      <Routes>
-        <Route path="/" element={<Navigate to="/dashboard" />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/robos" element={<Robots />} />
-        <Route path="/jobs" element={<Jobs />} />
-        <Route path="/execucoes" element={<Executions />} />
-        <Route path="*" element={<Navigate to="/dashboard" />} />
-      </Routes>
-    </Layout>
+    <AuthProvider>
+      <Router>
+        <div className="App">
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/" element={
+              <ProtectedRoute>
+                <Header />
+                <div className="container">
+                  <Dashboard />
+                </div>
+              </ProtectedRoute>
+            } />
+            <Route path="/robos" element={
+              <ProtectedRoute>
+                <Header />
+                <div className="container">
+                  <Robos />
+                </div>
+              </ProtectedRoute>
+            } />
+            <Route path="/jobs" element={
+              <ProtectedRoute>
+                <Header />
+                <div className="container">
+                  <Jobs />
+                </div>
+              </ProtectedRoute>
+            } />
+            <Route path="/execucoes" element={
+              <ProtectedRoute>
+                <Header />
+                <div className="container">
+                  <Execucoes />
+                </div>
+              </ProtectedRoute>
+            } />
+          </Routes>
+        </div>
+      </Router>
+    </AuthProvider>
   )
 }
 
 export default App
+

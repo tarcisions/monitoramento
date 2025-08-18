@@ -1,4 +1,15 @@
-.PHONY: build up down logs clean restart migrate createsuperuser shell test
+.PHONY: help build up down restart logs clean backup restore
+
+help:
+	@echo "Comandos disponíveis:"
+	@echo "  build     - Construir as imagens Docker"
+	@echo "  up        - Iniciar todos os serviços"
+	@echo "  down      - Parar todos os serviços"
+	@echo "  restart   - Reiniciar todos os serviços"
+	@echo "  logs      - Visualizar logs de todos os serviços"
+	@echo "  clean     - Limpar containers e volumes (CUIDADO: apaga dados)"
+	@echo "  backup    - Fazer backup do banco de dados"
+	@echo "  restore   - Restaurar backup do banco de dados"
 
 build:
 	docker-compose build
@@ -9,6 +20,9 @@ up:
 down:
 	docker-compose down
 
+restart:
+	docker-compose restart
+
 logs:
 	docker-compose logs -f
 
@@ -16,47 +30,11 @@ clean:
 	docker-compose down -v
 	docker system prune -f
 
-restart:
-	docker-compose restart
+backup:
+	docker-compose exec postgres pg_dump -U postgres rpa_db > backup_$(shell date +%Y%m%d_%H%M%S).sql
+	@echo "Backup criado: backup_$(shell date +%Y%m%d_%H%M%S).sql"
 
-migrate:
-	docker-compose exec backend python manage.py migrate
+restore:
+	@read -p "Digite o nome do arquivo de backup: " backup_file; \
+	docker-compose exec -T postgres psql -U postgres rpa_db < $$backup_file
 
-createsuperuser:
-	docker-compose exec backend python manage.py createsuperuser
-
-shell:
-	docker-compose exec backend python manage.py shell
-
-test:
-	docker-compose exec backend python manage.py test
-
-backup-db:
-	docker-compose exec postgres pg_dump -U rpa_user rpa_monitoramento > backup_$(shell date +%Y%m%d_%H%M%S).sql
-
-restore-db:
-	@read -p "Digite o caminho do arquivo de backup: " backup_file; \
-	docker-compose exec -T postgres psql -U rpa_user -d rpa_monitoramento < $$backup_file
-
-status:
-	docker-compose ps
-
-logs-backend:
-	docker-compose logs -f backend
-
-logs-agent:
-	docker-compose logs -f agent
-
-logs-celery:
-	docker-compose logs -f celery_worker celery_beat
-
-scale-agents:
-	@read -p "Numero de agentes: " count; \
-	docker-compose up -d --scale agent=$$count
-
-health:
-	@echo "Verificando saude dos servicos..."
-	@curl -s http://localhost/health/ || echo "Backend: FALHA"
-	@curl -s http://localhost:3000/api/health || echo "Grafana: FALHA"
-	@curl -s http://localhost:9090/-/healthy || echo "Prometheus: FALHA"
-	@curl -s http://localhost:3100/ready || echo "Loki: FALHA"

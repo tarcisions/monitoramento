@@ -1,646 +1,408 @@
-# Sistema de Monitoramento e Orquestração RPA
+# Sistema RPA - Monitoramento e Orquestração
 
-Sistema completo para monitoramento e orquestração de robôs RPA com interface web, métricas em tempo real e observabilidade completa.
+Sistema web completo para monitoramento e orquestração de robôs RPA (Robotic Process Automation), desenvolvido com Django REST Framework no backend, React no frontend e PostgreSQL como banco de dados.
 
-## 🔧 Requisitos Mínimos
+## Visão Geral
+
+Este sistema permite o cadastro, monitoramento e controle de robôs RPA através de uma interface web moderna e intuitiva. O sistema oferece funcionalidades completas de CRUD para robôs e jobs, além de controle de execuções com estados como iniciar, pausar, parar e retomar.
+
+### Principais Funcionalidades
+
+- **Cadastro de Robôs**: Gerenciamento completo de robôs com informações de host, token de agente e status
+- **Cadastro de Jobs**: Criação e gerenciamento de jobs com comandos, timeouts e parâmetros personalizáveis
+- **Controle de Execuções**: Monitoramento em tempo real com controles para iniciar, pausar, parar e retomar execuções
+- **Autenticação JWT**: Sistema seguro de autenticação com tokens JWT
+- **Interface Responsiva**: Frontend React moderno e responsivo
+- **API REST Completa**: Backend com endpoints RESTful para todas as operações
+
+## Arquitetura
+
+O sistema é composto por três componentes principais:
+
+1. **Backend (Django REST Framework)**: API REST com autenticação JWT, modelos de dados e lógica de negócio
+2. **Frontend (React + Vite)**: Interface web responsiva com roteamento e integração com a API
+3. **Banco de Dados (PostgreSQL)**: Armazenamento persistente de dados
+
+## Requisitos Mínimos
 
 ### Sistema Operacional
-- Linux (Ubuntu 20.04+ recomendado) ou Windows 10+ com WSL2
-- 4GB RAM mínimo (8GB+ recomendado)
-- 20GB espaço em disco disponível
-- Conectividade de internet para download das imagens Docker
+- Linux (Ubuntu 20.04+ recomendado)
+- Windows 10/11 com WSL2
+- macOS 10.15+
 
-### Software
+### Software Necessário
 - Docker 20.10+
 - Docker Compose 2.0+
-- Git
-- Make (opcional, para comandos facilitados)
+- Git (para clonagem do repositório)
 
-## 🚀 Instalação Passo a Passo
+### Hardware Mínimo
+- 2 GB RAM
+- 10 GB espaço em disco
+- Processador dual-core
 
-### 1. Clone o Repositório
+## Instalação
+
+### 1. Preparação do Ambiente
+
+Clone o repositório:
 ```bash
 git clone <url-do-repositorio>
 cd rpa-monitoramento
 ```
 
-### 2. Configure as Variáveis de Ambiente
+### 2. Configuração de Variáveis de Ambiente
+
+Copie o arquivo de exemplo e ajuste as configurações:
 ```bash
-cp server/.env.example server/.env
+cp .env.example .env
 ```
 
-Edite o arquivo `server/.env` com suas configurações:
-```bash
-nano server/.env
+Edite o arquivo `.env` conforme necessário:
+```env
+DEBUG=False
+SECRET_KEY=sua-chave-secreta-aqui
+DB_NAME=rpa_db
+DB_USER=postgres
+DB_PASSWORD=sua-senha-segura
+DB_HOST=postgres
+DB_PORT=5432
+DJANGO_SUPERUSER_USERNAME=admin
+DJANGO_SUPERUSER_PASSWORD=sua-senha-admin
+DJANGO_SUPERUSER_EMAIL=admin@example.com
 ```
 
-### 3. Construa e Execute os Serviços
+### 3. Inicialização do Sistema
+
+Execute o comando para subir todos os serviços:
 ```bash
 docker-compose up -d --build
 ```
 
-### 4. Verifique se os Serviços Estão Rodando
+Este comando irá:
+- Construir as imagens Docker do backend e frontend
+- Inicializar o banco de dados PostgreSQL
+- Executar as migrações do Django
+- Criar o superusuário automaticamente
+- Iniciar todos os serviços
+
+### 4. Verificação da Instalação
+
+Aguarde alguns minutos para que todos os serviços sejam inicializados. Você pode verificar o status com:
 ```bash
 docker-compose ps
 ```
 
-### 5. Acesse a Interface Web
-- Interface Principal: http://localhost
-- Grafana: http://localhost/grafana
-- Prometheus: http://localhost/prometheus
-- API: http://localhost/api
+Todos os serviços devem estar com status "Up" e "healthy".
 
-### 6. Faça Login no Sistema
-Usuário padrão:
+## Portas e Firewall
+
+O sistema utiliza as seguintes portas:
+
+| Serviço | Porta | Descrição |
+|---------|-------|-----------|
+| Frontend (Nginx) | 80 | Interface web principal |
+| Backend (Django) | 8000 | API REST |
+| PostgreSQL | 5432 | Banco de dados |
+
+### Configuração de Firewall
+
+Para acesso externo, certifique-se de que as seguintes portas estejam liberadas:
+- **Porta 80**: Acesso à interface web
+- **Porta 8000**: Acesso direto à API (opcional)
+- **Porta 5432**: Acesso ao banco (apenas se necessário)
+
+## Acesso ao Sistema
+
+### Interface Web
+- **URL**: http://129.148.32.147/
+- **Usuário padrão**: admin
+- **Senha padrão**: admin123
+
+### Django Admin
+- **URL**: http://129.148.32.147/admin/
 - **Usuário**: admin
 - **Senha**: admin123
 
-## 📋 Arquitetura do Sistema
+### API REST
+- **Base URL**: http://129.148.32.147/api/
+- **Documentação**: Endpoints disponíveis listados abaixo
 
-### Componentes Principais
+## Endpoints da API
 
-#### Backend (Django REST Framework)
-- **Porta**: 8000 (interna)
-- **Tecnologias**: Python 3.11, Django 4.2, PostgreSQL, Redis, Celery
-- **Função**: API REST, autenticação JWT, processamento assíncrono
-
-#### Frontend (React + Vite)
-- **Porta**: 80 (via nginx)
-- **Tecnologias**: React 18, Vite, Bootstrap 5, Axios
-- **Função**: Interface web para gerenciamento de robôs e jobs
-
-#### Agente RPA
-- **Porta**: 9091 (métricas Prometheus)
-- **Tecnologias**: Python 3.11, Redis pub/sub, psutil
-- **Função**: Execução de comandos nos robôs, coleta de métricas
-
-#### Observabilidade
-- **Grafana**: 3000 (interna), /grafana (externa)
-- **Prometheus**: 9090 (interna), /prometheus (externa) 
-- **Loki**: 3100 (interna)
-
-#### Proxy Reverso
-- **Nginx**: 80 (externa)
-- **Função**: Roteamento de requisições, balanceamento
-
-## 🌐 Portas e Endpoints
-
-### Portas Externas (Acessíveis via Browser)
-| Serviço | Porta | URL | Descrição |
-|---------|-------|-----|----------|
-| Interface Web | 80 | http://localhost | Interface principal do sistema |
-| API REST | 80 | http://localhost/api | Endpoints da API |
-| Django Admin | 80 | http://localhost/admin | Painel administrativo |
-| Grafana | 80 | http://localhost/grafana | Dashboards de monitoramento |
-| Prometheus | 80 | http://localhost/prometheus | Interface do Prometheus |
-
-### Portas Internas (Comunicação entre Serviços)
-| Serviço | Porta | Função |
-|---------|-------|---------|
-| PostgreSQL | 5432 | Banco de dados principal |
-| Redis | 6379 | Message broker e cache |
-| Django Backend | 8000 | API REST interna |
-| Grafana | 3000 | Interface interna |
-| Prometheus | 9090 | Coleta de métricas |
-| Loki | 3100 | Agregação de logs |
-| Agente RPA | 9091 | Métricas do agente |
-
-## ⚙️ Variáveis de Ambiente
-
-### Configurações do Banco de Dados
-```bash
-# PostgreSQL
-POSTGRES_DB=rpa_monitoramento          # Nome do banco
-POSTGRES_USER=rpa_user                 # Usuário do banco
-POSTGRES_PASSWORD=rpa_password         # Senha do banco
-POSTGRES_HOST=postgres                 # Host do banco
-POSTGRES_PORT=5432                     # Porta do banco
+### Autenticação
+```
+POST /api/auth/login/
+POST /api/auth/refresh/
 ```
 
-### Configurações do Redis
-```bash
-# Redis URLs
-REDIS_URL=redis://redis:6379/0         # URL principal do Redis
-CELERY_BROKER_URL=redis://redis:6379/0 # Broker do Celery
-CELERY_RESULT_BACKEND=redis://redis:6379/0 # Backend de resultados
+### Robôs
+```
+GET    /api/robos/          # Listar robôs
+POST   /api/robos/          # Criar robô
+GET    /api/robos/{id}/     # Detalhes do robô
+PUT    /api/robos/{id}/     # Atualizar robô
+DELETE /api/robos/{id}/     # Excluir robô
 ```
 
-### Configurações do Django
-```bash
-# Django
-SECRET_KEY=sua-chave-secreta-muito-segura-aqui  # Chave secreta (ALTERE!)
-DEBUG=False                                      # Modo debug (produção: False)
-ALLOWED_HOSTS=*                                  # Hosts permitidos
+### Jobs
+```
+GET    /api/jobs/           # Listar jobs
+POST   /api/jobs/           # Criar job
+GET    /api/jobs/{id}/      # Detalhes do job
+PUT    /api/jobs/{id}/      # Atualizar job
+DELETE /api/jobs/{id}/      # Excluir job
 ```
 
-### Configurações de Usuários Padrão
-```bash
-# Superusuário Django
-DJANGO_SUPERUSER_USERNAME=admin        # Nome do admin
-DJANGO_SUPERUSER_EMAIL=admin@rpa.local # Email do admin
-DJANGO_SUPERUSER_PASSWORD=admin123     # Senha do admin (ALTERE!)
-
-# Grafana
-GF_SECURITY_ADMIN_USER=admin           # Usuário admin Grafana
-GF_SECURITY_ADMIN_PASSWORD=admin       # Senha admin Grafana (ALTERE!)
+### Execuções
+```
+GET    /api/execucoes/              # Listar execuções
+POST   /api/execucoes/              # Criar execução
+GET    /api/execucoes/{id}/         # Detalhes da execução
+POST   /api/execucoes/{id}/iniciar/ # Iniciar execução
+POST   /api/execucoes/{id}/pausar/  # Pausar execução
+POST   /api/execucoes/{id}/parar/   # Parar execução
+POST   /api/execucoes/{id}/retomar/ # Retomar execução
 ```
 
-### Configurações do Agente
-```bash
-# Agente RPA
-AGENT_TOKEN=token-agente-padrao        # Token de autenticação do agente
-AGENT_NAME=agente-01                   # Nome identificador do agente
-```
+## Uso do Sistema
 
-## 📊 Como Usar o Sistema
+### 1. Primeiro Acesso
 
-### 1. Gerenciamento de Robôs
+1. Acesse http://129.148.32.147/
+2. Faça login com as credenciais padrão (admin/admin123)
+3. Altere a senha padrão no Django Admin
 
-#### Cadastrar um Novo Robô
-1. Acesse http://localhost
-2. Faça login com admin/admin123
-3. Vá para "Robôs" → "Novo Robô"
-4. Preencha os dados:
-   - **Nome**: Nome identificador do robô
-   - **Host**: IP ou hostname da máquina
-   - **Token do Agente**: Token para autenticação
-   - **Ativo**: Marque se o robô está disponível
+### 2. Cadastro de Robôs
 
-#### Instalar o Agente no Robô
-1. Copie a pasta `agent/` para a máquina do robô
-2. Configure as variáveis de ambiente:
-   ```bash
-   export AGENT_TOKEN="seu-token-aqui"
-   export AGENT_NAME="nome-do-agente"
-   export REDIS_URL="redis://ip-do-servidor:6379/0"
-   ```
-3. Execute o agente:
-   ```bash
-   cd agent/
-   python main.py
-   ```
+1. Navegue para a seção "Robôs"
+2. Clique em "Novo Robô"
+3. Preencha os campos:
+   - **Nome**: Identificação única do robô
+   - **Host**: Endereço IP ou hostname onde o robô está executando
+   - **Token do Agente**: Token de autenticação do agente
+   - **Ativo**: Marque para habilitar o robô
 
-### 2. Gerenciamento de Jobs
+### 3. Cadastro de Jobs
 
-#### Criar um Novo Job
-1. Vá para "Jobs" → "Novo Job"
-2. Configure:
-   - **Nome**: Nome descritivo do job
-   - **Comando**: Comando a ser executado no robô
+1. Navegue para a seção "Jobs"
+2. Clique em "Novo Job"
+3. Preencha os campos:
+   - **Nome**: Identificação única do job
+   - **Comando**: Comando que será executado pelo robô
    - **Timeout**: Tempo limite em segundos
-   - **Parâmetros Padrão**: JSON com parâmetros (opcional)
-   - **Ativo**: Se o job pode ser executado
+   - **Parâmetros Padrão**: JSON com parâmetros padrão
+   - **Ativo**: Marque para habilitar o job
 
-Exemplo de Job:
-```json
-{
-  "nome": "Processamento de Notas Fiscais",
-  "comando": "python /opt/scripts/processar_nf.py",
-  "timeout_s": 1800,
-  "parametros_padrao": {
-    "diretorio": "/data/nf_pendentes",
-    "formato": "xml",
-    "validar": true
-  }
-}
+### 4. Controle de Execuções
+
+1. Navegue para a seção "Execuções"
+2. Clique em "Nova Execução"
+3. Selecione o robô e job desejados
+4. Configure parâmetros específicos (opcional)
+5. Use os botões de controle para gerenciar a execução:
+   - **Iniciar**: Inicia uma execução na fila
+   - **Pausar**: Pausa uma execução em andamento
+   - **Retomar**: Retoma uma execução pausada
+   - **Parar**: Para definitivamente uma execução
+
+## Exemplos de Uso via API
+
+### Login
+```bash
+curl -X POST http://129.148.32.147/api/auth/login/ \
+  -H "Content-Type: application/json" \
+  -d '{"username": "admin", "password": "admin123"}'
 ```
 
-### 3. Execução de Jobs
-
-#### Executar Job Manualmente
-1. Vá para "Execuções" → "Nova Execução"
-2. Selecione:
-   - **Robô**: Robô que executará o job
-   - **Job**: Job a ser executado
-   - **Parâmetros**: Parâmetros específicos (JSON)
-3. Clique em "Executar"
-
-#### Acompanhar Execuções
-1. Acesse "Execuções" para ver status em tempo real
-2. Clique em uma execução para ver detalhes:
-   - Logs de execução
-   - Tempo decorrido
-   - Status atual
-   - Métricas de performance
-
-### 4. Monitoramento
-
-#### Dashboards Grafana
-1. Acesse http://localhost/grafana
-2. Login: admin/admin
-3. Dashboards disponíveis:
-   - **RPA Overview**: Visão geral do sistema
-   - **RPA Logs**: Análise de logs
-
-#### Métricas Prometheus
-- Taxa de sucesso de jobs
-- Tempo médio de execução
-- Status dos robôs
-- Uso de recursos do sistema
-
-## 🔧 Comandos Úteis
-
-### Docker Compose
+### Criar Robô
 ```bash
-# Iniciar todos os serviços
-docker-compose up -d
+curl -X POST http://129.148.32.147/api/robos/ \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer SEU_TOKEN_JWT" \
+  -d '{
+    "nome": "Robo-01",
+    "host": "192.168.1.100",
+    "token_agente": "token-secreto-123",
+    "ativo": true
+  }'
+```
 
-# Parar todos os serviços
+### Criar Job
+```bash
+curl -X POST http://129.148.32.147/api/jobs/ \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer SEU_TOKEN_JWT" \
+  -d '{
+    "nome": "ProcessarPlanilha",
+    "comando": "python processar_planilha.py",
+    "timeout_s": 600,
+    "parametros_padrao": {"arquivo": "dados.xlsx"},
+    "ativo": true
+  }'
+```
+
+### Criar Execução
+```bash
+curl -X POST http://129.148.32.147/api/execucoes/ \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer SEU_TOKEN_JWT" \
+  -d '{
+    "robo": 1,
+    "job": 1,
+    "parametros": {"arquivo": "dados_especiais.xlsx"}
+  }'
+```
+
+## Manutenção
+
+### Backup do Banco de Dados
+```bash
+docker-compose exec postgres pg_dump -U postgres rpa_db > backup.sql
+```
+
+### Restauração do Banco
+```bash
+docker-compose exec -T postgres psql -U postgres rpa_db < backup.sql
+```
+
+### Logs do Sistema
+```bash
+# Logs de todos os serviços
+docker-compose logs
+
+# Logs específicos
+docker-compose logs backend
+docker-compose logs frontend
+docker-compose logs postgres
+```
+
+### Atualização do Sistema
+```bash
+# Parar os serviços
 docker-compose down
 
-# Ver logs de um serviço específico
-docker-compose logs -f backend
+# Atualizar o código
+git pull
 
-# Reiniciar um serviço
+# Reconstruir e iniciar
+docker-compose up -d --build
+```
+
+### Limpeza de Dados
+```bash
+# Remover containers e volumes (CUIDADO: apaga todos os dados)
+docker-compose down -v
+
+# Remover apenas containers
+docker-compose down
+```
+
+## Escalabilidade
+
+### Adicionando Mais Workers
+Para aumentar a capacidade de processamento, você pode escalar o backend:
+```bash
+docker-compose up -d --scale backend=3
+```
+
+### Balanceamento de Carga
+Para ambientes de produção, considere usar um load balancer como Nginx ou HAProxy na frente dos containers do backend.
+
+### Monitoramento
+Implemente soluções de monitoramento como:
+- Prometheus + Grafana para métricas
+- ELK Stack para logs centralizados
+- Health checks personalizados
+
+## Troubleshooting
+
+### Problemas Comuns
+
+**1. Erro de conexão com o banco de dados**
+```bash
+# Verificar se o PostgreSQL está rodando
+docker-compose ps postgres
+
+# Verificar logs do banco
+docker-compose logs postgres
+```
+
+**2. Frontend não carrega**
+```bash
+# Verificar se o Nginx está rodando
+docker-compose ps frontend
+
+# Verificar logs do frontend
+docker-compose logs frontend
+```
+
+**3. API retorna erro 500**
+```bash
+# Verificar logs do backend
+docker-compose logs backend
+
+# Verificar se as migrações foram aplicadas
+docker-compose exec backend python manage.py showmigrations
+```
+
+**4. Problemas de permissão**
+```bash
+# Ajustar permissões dos arquivos
+sudo chown -R $USER:$USER .
+```
+
+### Comandos Úteis
+
+```bash
+# Reiniciar um serviço específico
 docker-compose restart backend
 
-# Reconstruir e reiniciar
-docker-compose up -d --build
-
-# Ver status dos serviços
-docker-compose ps
-```
-
-### Makefile (Comandos Facilitados)
-```bash
-# Configuração inicial
-make setup
-
-# Iniciar sistema
-make start
-
-# Parar sistema
-make stop
-
-# Ver logs
-make logs
-
-# Backup do banco
-make backup
-
-# Restaurar backup
-make restore
-
-# Limpar dados
-make clean
-```
-
-### Gerenciamento do Django
-```bash
-# Acessar shell do Django
+# Executar comandos Django
 docker-compose exec backend python manage.py shell
 
-# Criar superusuário
-docker-compose exec backend python manage.py createsuperuser
+# Criar novas migrações
+docker-compose exec backend python manage.py makemigrations
 
 # Aplicar migrações
 docker-compose exec backend python manage.py migrate
 
-# Coletar arquivos estáticos
-docker-compose exec backend python manage.py collectstatic
+# Criar superusuário manualmente
+docker-compose exec backend python manage.py createsuperuser
 ```
 
-## 🛠️ Manutenção do Sistema
+## Segurança
 
-### Backup Regular
+### Recomendações de Produção
 
-#### Backup do Banco de Dados
-```bash
-# Criar backup
-docker-compose exec postgres pg_dump -U rpa_user rpa_monitoramento > backup_$(date +%Y%m%d_%H%M%S).sql
+1. **Alterar Senhas Padrão**: Sempre altere as senhas padrão antes de colocar em produção
+2. **HTTPS**: Configure certificados SSL/TLS para conexões seguras
+3. **Firewall**: Restrinja o acesso às portas apenas para IPs necessários
+4. **Backup Regular**: Implemente rotinas de backup automatizadas
+5. **Monitoramento**: Configure alertas para falhas e tentativas de acesso não autorizadas
 
-# Restaurar backup
-docker-compose exec -i postgres psql -U rpa_user rpa_monitoramento < backup_20240101_120000.sql
+### Configurações de Segurança
+
+```env
+# Exemplo de configurações mais seguras
+DEBUG=False
+SECRET_KEY=chave-muito-complexa-e-unica
+ALLOWED_HOSTS=129.148.32.147,localhost
 ```
 
-#### Backup de Configurações
-```bash
-# Backup das configurações
-tar -czf config_backup_$(date +%Y%m%d).tar.gz \
-  server/.env \
-  observabilidade/ \
-  nginx/nginx.conf \
-  docker-compose.yml
-```
+## Licença
 
-### Limpeza de Dados
+Este projeto está licenciado sob a Licença MIT. Veja o arquivo `LICENSE` para mais detalhes.
 
-#### Limpar Logs Antigos
-```bash
-# Manter apenas logs dos últimos 30 dias
-docker-compose exec backend python manage.py shell -c "
-from app.core.models import LogExecucao
-from datetime import datetime, timedelta
-LogExecucao.objects.filter(
-    data_hora__lt=datetime.now() - timedelta(days=30)
-).delete()
-"
-```
+## Suporte
 
-#### Limpar Execuções Antigas
-```bash
-# Manter apenas execuções dos últimos 90 dias
-docker-compose exec backend python manage.py shell -c "
-from app.core.models import ExecucaoRobo
-from datetime import datetime, timedelta
-ExecucaoRobo.objects.filter(
-    data_inicio__lt=datetime.now() - timedelta(days=90)
-).delete()
-"
-```
+Para suporte técnico ou dúvidas sobre o sistema:
 
-### Monitoramento de Performance
+1. Verifique a seção de Troubleshooting
+2. Consulte os logs do sistema
+3. Verifique a documentação da API
+4. Entre em contato com a equipe de desenvolvimento
 
-#### Verificar Uso de Recursos
-```bash
-# Uso de CPU e Memória
-docker stats
+---
 
-# Espaço em disco
-docker system df
+**Desenvolvido com ❤️ usando Django REST Framework e React**
 
-# Logs de sistema
-docker-compose logs --tail=100
-```
-
-#### Métricas Importantes
-- Taxa de sucesso dos jobs (>95%)
-- Tempo médio de execução (<timeout configurado)
-- Uso de memória (<80%)
-- Espaço em disco (<85%)
-
-### Atualizações
-
-#### Atualizar o Sistema
-```bash
-# 1. Fazer backup
-make backup
-
-# 2. Baixar atualizações
-git pull origin main
-
-# 3. Reconstruir containers
-docker-compose build --no-cache
-
-# 4. Aplicar migrações
-docker-compose run backend python manage.py migrate
-
-# 5. Reiniciar sistema
-docker-compose up -d
-```
-
-## 🔍 Troubleshooting
-
-### Problemas Comuns
-
-#### 1. Containers não Iniciam
-
-**Sintoma**: `docker-compose up` falha
-
-**Possíveis Causas e Soluções**:
-```bash
-# Verificar logs
-docker-compose logs
-
-# Verificar portas ocupadas
-netstat -tulpn | grep :80
-netstat -tulpn | grep :5432
-
-# Limpar containers antigos
-docker-compose down -v
-docker system prune -f
-
-# Reconstruir do zero
-docker-compose build --no-cache
-docker-compose up -d
-```
-
-#### 2. Erro de Conexão com Banco
-
-**Sintoma**: Django não consegue conectar ao PostgreSQL
-
-**Soluções**:
-```bash
-# Verificar se PostgreSQL está rodando
-docker-compose ps postgres
-
-# Verificar logs do PostgreSQL
-docker-compose logs postgres
-
-# Testar conexão manual
-docker-compose exec postgres psql -U rpa_user -d rpa_monitoramento
-
-# Recriar volume do banco
-docker-compose down -v
-docker volume rm rpa-monitoramento_postgres_data
-docker-compose up -d
-```
-
-#### 3. Redis não Disponível
-
-**Sintoma**: Celery workers não conseguem conectar
-
-**Soluções**:
-```bash
-# Verificar status do Redis
-docker-compose ps redis
-
-# Testar conexão Redis
-docker-compose exec redis redis-cli ping
-
-# Reiniciar Redis
-docker-compose restart redis
-
-# Verificar configuração
-echo $REDIS_URL
-```
-
-#### 4. Interface Web não Carrega
-
-**Sintoma**: Página em branco ou erro 502
-
-**Soluções**:
-```bash
-# Verificar status do nginx
-docker-compose ps nginx
-
-# Verificar logs do nginx
-docker-compose logs nginx
-
-# Verificar se backend está rodando
-docker-compose ps backend
-
-# Testar endpoint diretamente
-curl http://localhost/api/health/
-
-# Reconstruir frontend
-docker-compose build frontend
-docker-compose up -d frontend
-```
-
-#### 5. Agente não Conecta
-
-**Sintoma**: Robô aparece offline no painel
-
-**Soluções**:
-```bash
-# Verificar logs do agente
-python agent/main.py
-
-# Verificar token de autenticação
-echo $AGENT_TOKEN
-
-# Testar conectividade Redis
-telnet <ip-servidor> 6379
-
-# Verificar firewall
-sudo ufw status
-sudo firewall-cmd --list-ports
-```
-
-#### 6. Jobs não Executam
-
-**Sintoma**: Jobs ficam na fila sem executar
-
-**Soluções**:
-```bash
-# Verificar workers Celery
-docker-compose logs celery_worker
-
-# Verificar fila do Celery
-docker-compose exec backend python manage.py shell -c "
-from celery import Celery
-app = Celery('app')
-i = app.control.inspect()
-print('Active:', i.active())
-print('Scheduled:', i.scheduled())
-"
-
-# Reiniciar workers
-docker-compose restart celery_worker celery_beat
-```
-
-#### 7. Grafana não Mostra Dados
-
-**Sintoma**: Dashboards vazios ou "No data"
-
-**Soluções**:
-```bash
-# Verificar se Prometheus está coletando
-curl http://localhost/prometheus/api/v1/targets
-
-# Verificar métricas disponíveis
-curl http://localhost/api/metrics/
-
-# Reiniciar Prometheus
-docker-compose restart prometheus
-
-# Verificar configuração do datasource
-# Grafana → Configuration → Data Sources
-```
-
-### Logs Importantes
-
-#### Locais dos Logs
-```bash
-# Logs do Django
-docker-compose logs backend
-
-# Logs do Celery
-docker-compose logs celery_worker
-docker-compose logs celery_beat
-
-# Logs do Nginx
-docker-compose logs nginx
-
-# Logs do Agente
-# (no host do robô)
-tail -f /var/log/rpa_agent.log
-```
-
-#### Níveis de Log
-- **DEBUG**: Informações detalhadas de desenvolvimento
-- **INFO**: Informações gerais de operação
-- **WARNING**: Situações que merecem atenção
-- **ERROR**: Erros que impedem operação normal
-- **CRITICAL**: Erros críticos que afetam o sistema
-
-### Monitoramento de Saúde
-
-#### Endpoints de Health Check
-```bash
-# API Backend
-curl http://localhost/api/health/
-
-# Banco de dados
-curl http://localhost/api/health/database/
-
-# Redis
-curl http://localhost/api/health/redis/
-
-# Celery
-curl http://localhost/api/health/celery/
-```
-
-#### Alertas Recomendados
-
-Configure alertas para:
-- Uso de CPU > 80%
-- Uso de memória > 85%
-- Uso de disco > 90%
-- Taxa de erro > 5%
-- Tempo de resposta > 5s
-- Robôs offline > 10min
-
-## 📞 Suporte
-
-### Informações para Suporte
-
-Ao reportar problemas, inclua:
-
-1. **Versão do sistema**: `git describe --tags`
-2. **Ambiente**: Desenvolvimento/Produção
-3. **Sistema operacional**: `uname -a`
-4. **Versão Docker**: `docker --version`
-5. **Logs relevantes**: últimas 50 linhas
-6. **Configuração**: arquivos .env (sem senhas)
-
-### Coleta de Informações
-
-```bash
-# Script para coleta automática
-#!/bin/bash
-echo "=== INFORMAÇÕES DO SISTEMA ==="
-date
-uname -a
-docker --version
-docker-compose --version
-
-echo -e "\n=== STATUS DOS SERVIÇOS ==="
-docker-compose ps
-
-echo -e "\n=== USO DE RECURSOS ==="
-docker stats --no-stream
-
-echo -e "\n=== LOGS RECENTES ==="
-docker-compose logs --tail=20
-```
-
-## 📄 Licença
-
-Este projeto está sob a licença MIT. Veja o arquivo LICENSE para mais detalhes.
-
-## 🏗️ Contribuindo
-
-1. Faça fork do repositório
-2. Crie uma branch para sua feature (`git checkout -b feature/nova-funcionalidade`)
-3. Commit suas mudanças (`git commit -am 'Adiciona nova funcionalidade'`)
-4. Push para a branch (`git push origin feature/nova-funcionalidade`)
-5. Crie um Pull Request
-
-## 📚 Documentação Adicional
-
-- **API Documentation**: `/docs/postman_collection.json`
-- **Architecture Overview**: `/docs/architecture.md`
-- **Development Guide**: `/docs/development.md`
-- **Deployment Guide**: `/docs/deployment.md`

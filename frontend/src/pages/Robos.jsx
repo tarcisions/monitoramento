@@ -1,53 +1,48 @@
 import React, { useState, useEffect } from 'react'
 import api from '../services/api'
 
-function Jobs() {
-  const [jobs, setJobs] = useState([])
+function Robos() {
+  const [robos, setRobos] = useState([])
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState({
     nome: '',
-    comando: '',
-    timeout_s: 300,
-    parametros_padrao: '{}',
+    host: '',
+    token_agente: '',
     ativo: true
   })
 
   useEffect(() => {
-    loadJobs()
+    loadRobos()
   }, [])
 
-  const loadJobs = async () => {
+  const loadRobos = async () => {
     try {
-      const response = await api.get('/jobs/')
-      setJobs(response.data.results || response.data)
+      const response = await api.get('/robos/')
+      setRobos(response.data.results || response.data)
     } catch (error) {
-      console.error('Erro ao carregar jobs:', error)
+      console.error('Erro ao carregar robôs:', error)
     }
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
-      const data = {
-        ...formData,
-        parametros_padrao: JSON.parse(formData.parametros_padrao)
-      }
-      await api.post('/jobs/', data)
-      setFormData({ nome: '', comando: '', timeout_s: 300, parametros_padrao: '{}', ativo: true })
+      await api.post('/robos/', formData)
+      setFormData({ nome: '', host: '', token_agente: '', ativo: true })
       setShowForm(false)
-      loadJobs()
+      loadRobos()
     } catch (error) {
-      console.error('Erro ao criar job:', error)
+      console.error('Erro ao criar robô:', error)
     }
   }
 
   const handleDelete = async (id) => {
-    if (window.confirm('Tem certeza que deseja excluir este job?')) {
+    if (window.confirm('Tem certeza que deseja excluir este robô?')) {
       try {
-        await api.delete(`/jobs/${id}/`)
-        loadJobs()
+        await api.delete(`/robos/${id}/`)
+        loadRobos()
       } catch (error) {
-        console.error('Erro ao excluir job:', error)
+        console.error('Erro ao excluir robô:', error)
       }
     }
   }
@@ -55,18 +50,18 @@ function Jobs() {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <h1>Jobs</h1>
+        <h1>Robôs</h1>
         <button 
           className="btn btn-primary"
           onClick={() => setShowForm(!showForm)}
         >
-          {showForm ? 'Cancelar' : 'Novo Job'}
+          {showForm ? 'Cancelar' : 'Novo Robô'}
         </button>
       </div>
 
       {showForm && (
         <div className="card" style={{ marginBottom: '2rem' }}>
-          <h3>Novo Job</h3>
+          <h3>Novo Robô</h3>
           <form onSubmit={handleSubmit}>
             <div className="form-group">
               <label>Nome:</label>
@@ -79,31 +74,22 @@ function Jobs() {
             </div>
 
             <div className="form-group">
-              <label>Comando:</label>
-              <textarea
-                value={formData.comando}
-                onChange={(e) => setFormData({...formData, comando: e.target.value})}
-                rows="3"
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Timeout (segundos):</label>
+              <label>Host:</label>
               <input
-                type="number"
-                value={formData.timeout_s}
-                onChange={(e) => setFormData({...formData, timeout_s: parseInt(e.target.value)})}
+                type="text"
+                value={formData.host}
+                onChange={(e) => setFormData({...formData, host: e.target.value})}
                 required
               />
             </div>
 
             <div className="form-group">
-              <label>Parâmetros Padrão (JSON):</label>
-              <textarea
-                value={formData.parametros_padrao}
-                onChange={(e) => setFormData({...formData, parametros_padrao: e.target.value})}
-                rows="3"
+              <label>Token do Agente:</label>
+              <input
+                type="text"
+                value={formData.token_agente}
+                onChange={(e) => setFormData({...formData, token_agente: e.target.value})}
+                required
               />
             </div>
 
@@ -130,31 +116,27 @@ function Jobs() {
           <thead>
             <tr>
               <th>Nome</th>
-              <th>Comando</th>
-              <th>Timeout</th>
+              <th>Host</th>
               <th>Status</th>
               <th>Criado em</th>
               <th>Ações</th>
             </tr>
           </thead>
           <tbody>
-            {jobs.map(job => (
-              <tr key={job.id}>
-                <td>{job.nome}</td>
-                <td style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {job.comando}
-                </td>
-                <td>{job.timeout_s}s</td>
+            {robos.map(robo => (
+              <tr key={robo.id}>
+                <td>{robo.nome}</td>
+                <td>{robo.host}</td>
                 <td>
-                  <span className={`status-badge ${job.ativo ? 'status-success' : 'status-stopped'}`}>
-                    {job.ativo ? 'Ativo' : 'Inativo'}
+                  <span className={`status-badge ${robo.ativo ? 'status-success' : 'status-stopped'}`}>
+                    {robo.ativo ? 'Ativo' : 'Inativo'}
                   </span>
                 </td>
-                <td>{new Date(job.criado_em).toLocaleString('pt-BR')}</td>
+                <td>{new Date(robo.criado_em).toLocaleString('pt-BR')}</td>
                 <td>
                   <button 
                     className="btn btn-danger"
-                    onClick={() => handleDelete(job.id)}
+                    onClick={() => handleDelete(robo.id)}
                   >
                     Excluir
                   </button>
@@ -168,5 +150,5 @@ function Jobs() {
   )
 }
 
-export default Jobs
+export default Robos
 
