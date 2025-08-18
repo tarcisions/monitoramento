@@ -1,9 +1,21 @@
 #!/bin/bash
 
 echo "Aguardando banco de dados..."
-while ! nc -z postgres 5432; do
-  sleep 0.1
-done
+
+python << END
+import time
+import socket
+
+host = "postgres"
+port = 5432
+
+while True:
+    try:
+        with socket.create_connection((host, port), timeout=1):
+            break
+    except OSError:
+        time.sleep(0.1)
+END
 
 echo "Executando migrations..."
 python manage.py migrate
@@ -29,4 +41,3 @@ fi
 
 echo "Iniciando servidor..."
 exec gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3
-
