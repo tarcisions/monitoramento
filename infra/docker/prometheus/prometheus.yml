@@ -1,0 +1,88 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'rpa-monitor'
+    environment: 'production'
+
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          # - alertmanager:9093
+
+scrape_configs:
+  # RPA Monitor Backend API
+  - job_name: 'rpa-backend'
+    static_configs:
+      - targets: ['backend:8000']
+    metrics_path: /metrics
+    scrape_interval: 10s
+    scrape_timeout: 5s
+
+  # Demo RPA Robot
+  - job_name: 'rpa-demo-robot'
+    static_configs:
+      - targets: ['rpa-demo:9101']
+    metrics_path: /metrics
+    scrape_interval: 15s
+    scrape_timeout: 10s
+
+  # Node Exporter (Host metrics)
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 15s
+    scrape_timeout: 10s
+
+  # cAdvisor (Container metrics)
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+    scrape_interval: 15s
+    scrape_timeout: 10s
+
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # PostgreSQL Exporter (optional - uncomment if you add postgres_exporter)
+  # - job_name: 'postgres-exporter'
+  #   static_configs:
+  #     - targets: ['postgres-exporter:9187']
+
+  # Redis Exporter (optional - uncomment if you add redis_exporter)
+  # - job_name: 'redis-exporter'
+  #   static_configs:
+  #     - targets: ['redis-exporter:9121']
+
+  # Nginx metrics (if you enable nginx prometheus module)
+  # - job_name: 'nginx'
+  #   static_configs:
+  #     - targets: ['nginx:9113']
+
+# Storage configuration
+storage:
+  tsdb:
+    path: /prometheus/
+    retention.time: 30d
+    retention.size: 10GB
+
+# Remote write configuration (for external monitoring services)
+# remote_write:
+#   - url: "https://your-external-monitoring-service/api/v1/write"
+#     basic_auth:
+#       username: "your-username"
+#       password: "your-password"
+
+# Remote read configuration
+# remote_read:
+#   - url: "https://your-external-monitoring-service/api/v1/read"
+#     basic_auth:
+#       username: "your-username"
+#       password: "your-password"
