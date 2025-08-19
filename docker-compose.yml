@@ -1,249 +1,185 @@
-
 version: '3.8'
 
 services:
-  # PostgreSQL Database
-  db:
-    image: postgres:16-alpine
-    container_name: rpa-monitor-db
+  postgres:
+    image: postgres:15
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-rpa_monitor}
-      POSTGRES_USER: ${POSTGRES_USER:-rpa_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-rpa_password}
+      POSTGRES_DB: rpa_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-rpa_user} -d ${POSTGRES_DB:-rpa_monitor}"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
     restart: unless-stopped
-    networks:
-      - rpa-network
 
-  # Redis Cache and Message Broker
   redis:
     image: redis:7-alpine
-    container_name: rpa-monitor-redis
-    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:-redis_password}"]
-    volumes:
-      - redis-data:/data
     ports:
       - "6379:6379"
+    volumes:
+      - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
-      timeout: 3s
+      timeout: 5s
       retries: 5
     restart: unless-stopped
-    networks:
-      - rpa-network
 
-  # FastAPI Backend
   backend:
-    build: 
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: rpa-monitor-backend
+    build: ./server
     environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-rpa_user}:${POSTGRES_PASSWORD:-rpa_password}@db:5432/${POSTGRES_DB:-rpa_monitor}
-      - REDIS_URL=redis://:${REDIS_PASSWORD:-redis_password}@redis:6379/0
-      - SECRET_KEY=${SECRET_KEY:-your-secret-key-change-in-production}
-      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
-      - REFRESH_TOKEN_EXPIRE_DAYS=${REFRESH_TOKEN_EXPIRE_DAYS:-7}
-      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:5000,http://localhost}
-      - ENV=${ENV:-production}
-      - DEFAULT_TELEGRAM_BOT_TOKEN=${DEFAULT_TELEGRAM_BOT_TOKEN:-}
-      - DEFAULT_TELEGRAM_CHAT_ID=${DEFAULT_TELEGRAM_CHAT_ID:-}
-    volumes:
-      - ./logs:/app/logs
-    ports:
-      - "8000:8000"
+      - DEBUG=False
+      - SECRET_KEY=django-secret-key-change-in-production
+      - DB_NAME=rpa_db
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DJANGO_SUPERUSER_USERNAME=admin
+      - DJANGO_SUPERUSER_PASSWORD=admin123
+      - DJANGO_SUPERUSER_EMAIL=admin@example.com
     depends_on:
-      db:
+      postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+    ports:
+      - "8000:8000"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/admin/"]
       interval: 30s
       timeout: 10s
       retries: 3
     restart: unless-stopped
-    networks:
-      - rpa-network
 
-  # React Frontend
   frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile.frontend
-    container_name: rpa-monitor-frontend
-    environment:
-      - VITE_API_URL=/api
-    ports:
-      - "5173:5173"
-    restart: unless-stopped
-    networks:
-      - rpa-network
-
-  # Nginx Reverse Proxy
-  nginx:
-    image: nginx:1.27-alpine
-    container_name: rpa-monitor-nginx
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./infra/docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./infra/docker/nginx:/etc/nginx/conf.d:ro
-      - ./logs/nginx:/var/log/nginx
+    build: ./frontend
     depends_on:
       - backend
-      - frontend
+    ports:
+      - "80:80"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     restart: unless-stopped
-    networks:
-      - rpa-network
 
-  # Prometheus Monitoring
+  agent:
+    build: ./agent
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - AGENT_TOKEN=default-token
+      - ROBO_NOME=robo-agent-01
+    depends_on:
+      redis:
+        condition: service_healthy
+    ports:
+      - "9100:9100"
+    volumes:
+      - agent_logs:/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9100/metrics"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
   prometheus:
     image: prom/prometheus:latest
-    container_name: rpa-monitor-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./observabilidade/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
       - '--web.console.libraries=/etc/prometheus/console_libraries'
       - '--web.console.templates=/etc/prometheus/consoles'
-      - '--storage.tsdb.retention.time=30d'
+      - '--storage.tsdb.retention.time=200h'
       - '--web.enable-lifecycle'
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./infra/docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus-data:/prometheus
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     restart: unless-stopped
-    networks:
-      - rpa-network
 
-  # Grafana Dashboard
-  grafana:
-    image: grafana/grafana:latest
-    container_name: rpa-monitor-grafana
-    environment:
-      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin123}
-      - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
-    ports:
-      - "3000:3000"
-    volumes:
-      - grafana-data:/var/lib/grafana
-      - ./infra/docker/grafana/provisioning:/etc/grafana/provisioning:ro
-      - ./dashboards:/var/lib/grafana/dashboards:ro
-    depends_on:
-      - prometheus
-      - loki
-    restart: unless-stopped
-    networks:
-      - rpa-network
-
-  # Loki Log Aggregation
   loki:
     image: grafana/loki:2.9.0
-    container_name: rpa-monitor-loki
     ports:
       - "3100:3100"
-    command: -config.file=/etc/loki/local-config.yaml
     volumes:
-      - ./infra/docker/loki/loki-config.yml:/etc/loki/local-config.yaml:ro
-      - loki-data:/tmp/loki
+      - ./observabilidade/loki-config.yml:/etc/loki/local-config.yaml
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3100/ready"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     restart: unless-stopped
-    networks:
-      - rpa-network
 
-  # Promtail Log Collector
   promtail:
     image: grafana/promtail:2.9.0
-    container_name: rpa-monitor-promtail
     volumes:
-      - ./infra/docker/promtail/promtail-config.yml:/etc/promtail/config.yml:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /var/lib/docker/containers:/var/lib/docker/containers:ro
-      - ./logs:/var/log:ro
+      - ./observabilidade/promtail-config.yml:/etc/promtail/config.yml
+      - agent_logs:/logs
+      - /var/run/docker.sock:/var/run/docker.sock
     command: -config.file=/etc/promtail/config.yml
     depends_on:
       - loki
     restart: unless-stopped
-    networks:
-      - rpa-network
 
-  # Node Exporter for Host Metrics
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./observabilidade/grafana/provisioning:/etc/grafana/provisioning
+      - ./observabilidade/grafana/dashboards:/etc/grafana/provisioning/dashboards
+    depends_on:
+      - prometheus
+      - loki
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
   node-exporter:
     image: prom/node-exporter:latest
-    container_name: rpa-monitor-node-exporter
-    command:
-      - '--path.rootfs=/host'
-    pid: host
-    restart: unless-stopped
-    volumes:
-      - '/:/host:ro,rslave'
     ports:
-      - "9100:9100"
-    networks:
-      - rpa-network
-
-  # cAdvisor for Container Metrics
-  cadvisor:
-    image: gcr.io/cadvisor/cadvisor:latest
-    container_name: rpa-monitor-cadvisor
-    ports:
-      - "8080:8080"
+      - "9101:9100"
     volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
       - /:/rootfs:ro
-      - /var/run:/var/run:rw
-      - /sys:/sys:ro
-      - /var/lib/docker/:/var/lib/docker:ro
-      - /dev/disk/:/dev/disk:ro
-    privileged: true
-    devices:
-      - /dev/kmsg
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
     restart: unless-stopped
-    networks:
-      - rpa-network
-
-  # Demo RPA Robot
-  rpa-demo:
-    build:
-      context: ./robots/rpa_demo
-      dockerfile: Dockerfile
-    container_name: rpa-monitor-demo-robot
-    environment:
-      - API_URL=http://backend:8000/api
-      - ROBOT_SLUG=${DEMO_ROBOT_SLUG:-robo-demo}
-      - ROBOT_NAME=${DEMO_ROBOT_NAME:-Robô Demo}
-      - HEARTBEAT_INTERVAL=${DEMO_HEARTBEAT_INTERVAL:-5}
-    ports:
-      - "9101:9101"
-    depends_on:
-      - backend
-    restart: unless-stopped
-    networks:
-      - rpa-network
 
 volumes:
-  pgdata:
-    driver: local
-  redis-data:
-    driver: local
-  prometheus-data:
-    driver: local
-  grafana-data:
-    driver: local
-  loki-data:
-    driver: local
+  postgres_data:
+  redis_data:
+  agent_logs:
+  prometheus_data:
+  loki_data:
+  grafana_data:
 
-networks:
-  rpa-network:
-    driver: bridge
