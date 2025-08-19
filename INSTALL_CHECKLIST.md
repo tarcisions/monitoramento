@@ -3,8 +3,9 @@
 
 ## ✅ Pré-instalação
 - [ ] Docker instalado (versão 20.10+)
-- [ ] Docker Compose instalado (versão 2.0+)
+- [ ] Docker Compose (será instalado automaticamente se necessário)
 - [ ] Portas liberadas: 80, 443, 3000, 5432, 6379, 8000, 9090
+- [ ] Acesso à internet para baixar o Docker Compose
 
 ## ✅ Instalação
 - [ ] ZIP extraído

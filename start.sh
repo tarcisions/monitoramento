@@ -7,12 +7,25 @@ echo "🚀 Iniciando RPA Monitor..."
 # Verificar se Docker está instalado
 if ! command -v docker &> /dev/null; then
     echo "❌ Docker não encontrado. Por favor, instale o Docker primeiro."
+    echo "Para instalar o Docker, execute:"
+    echo "curl -fsSL https://get.docker.com -o get-docker.sh && sh get-docker.sh"
     exit 1
 fi
 
+# Verificar se Docker Compose está instalado
 if ! command -v docker-compose &> /dev/null; then
-    echo "❌ Docker Compose não encontrado. Por favor, instale o Docker Compose primeiro."
-    exit 1
+    echo "⚠️ Docker Compose não encontrado. Instalando automaticamente..."
+    chmod +x install-docker-compose.sh
+    ./install-docker-compose.sh
+    
+    # Verificar novamente após instalação
+    if ! command -v docker-compose &> /dev/null; then
+        echo "❌ Falha na instalação automática do Docker Compose."
+        echo "Instale manualmente com:"
+        echo "sudo curl -L \"https://github.com/docker/compose/releases/download/v2.24.5/docker-compose-\$(uname -s)-\$(uname -m)\" -o /usr/local/bin/docker-compose"
+        echo "sudo chmod +x /usr/local/bin/docker-compose"
+        exit 1
+    fi
 fi
 
 # Criar arquivo .env se não existir
