@@ -40,10 +40,32 @@ echo "📁 Criando diretórios..."
 mkdir -p infra/docker/logs/nginx
 mkdir -p infra/docker/ssl
 
-# Navegar para o diretório do Docker
-cd infra/docker
+# Criar diretório de logs se não existir
+mkdir -p logs
 
-echo "🐳 Iniciando containers Docker..."
+echo "🐳 Iniciando containers com Docker Compose..."
+docker-compose up -d
+
+echo "⏳ Aguardando serviços iniciarem..."
+sleep 10
+
+# Verificar se os serviços estão rodando
+if docker-compose ps | grep -q "Up"; then
+    echo "✅ Sistema iniciado com sucesso!"
+    echo ""
+    echo "🌐 Acessos disponíveis:"
+    echo "   Frontend: http://localhost"
+    echo "   API: http://localhost/api"
+    echo "   Grafana: http://localhost:3000 (admin/admin123)"
+    echo "   Prometheus: http://localhost:9090"
+    echo ""
+    echo "📋 Para verificar logs: docker-compose logs -f [service_name]"
+    echo "📋 Para parar: docker-compose down"
+else
+    echo "❌ Erro ao iniciar alguns serviços"
+    docker-compose ps
+    echo "Verifique os logs com: docker-compose logs"
+fi containers Docker..."
 docker-compose up -d
 
 echo ""
